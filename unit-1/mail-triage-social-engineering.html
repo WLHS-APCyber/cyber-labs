@@ -58,6 +58,19 @@
     padding: 0.6rem 1rem; min-height: 2.2rem; display: flex; align-items: center; gap: 0.5rem;
   }
   .inspector .lbl { color: var(--text-dim); }
+
+  .submit-panel { background: var(--paper-bg); border: 1px solid var(--paper-dark); border-top: 3px solid var(--ink); padding: 1.1rem 1.3rem; margin-top: 1rem; }
+  .submit-panel h3 { font-family: var(--display); font-weight: 400; margin: 0 0 0.3rem; font-size: 1.05rem; }
+  .submit-panel .sp-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 0.9rem; }
+  .submit-row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+  .submit-field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 220px; }
+  .submit-field label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .submit-field input { font: inherit; font-size: 0.88rem; padding: 0.5rem 0.65rem; border: 1px solid var(--paper-dark); background: #fff; color: var(--ink); }
+  .submit-status { font-size: 0.82rem; margin-top: 0.7rem; min-height: 1.2em; }
+  .submit-status.good { color: var(--teal); }
+  .submit-status.bad { color: var(--brick); }
+  .submit-status.work { color: var(--ochre); }
+  .submit-status a { color: var(--teal); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -114,6 +127,23 @@
     <ul id="resultsList"></ul>
   </div>
 
+  <div class="submit-panel">
+    <h3>Submit to instructor</h3>
+    <p class="sp-note">
+      Enter a pseudonym (no real names) and submit once you've classified every message.
+      This sends your score, task checklist, and a snapshot of your work to your instructor —
+      it does not use your name or any other personal info.
+    </p>
+    <div class="submit-row">
+      <div class="submit-field">
+        <label for="hackerName">Hacker name (pseudonym)</label>
+        <input id="hackerName" type="text" maxlength="40" autocomplete="off" placeholder="e.g. trailhawk_07">
+      </div>
+      <button class="btn primary" id="sendBtn" type="button">Submit completed lab</button>
+    </div>
+    <p class="submit-status" id="sendStatus" role="status" aria-live="polite"></p>
+  </div>
+
 </main>
 
 <footer class="site-foot">
@@ -121,6 +151,25 @@
 </footer>
 
 <script>
+const CONFIG = {
+  assignmentId: "mail-triage-social-engineering",
+  objectives: ["2.2", "5.6"],
+  // Paste your deployed Apps Script web app /exec URL here (see the companion Code.gs):
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwFktFADXjf2UvoaAbg3aiFoCg1lwYLnQcAkX8J4jDQL-P43wLF0-7d6CpZ6f0HxVCsyA/exec
+",
+  // Must match the SUBMISSION_TOKEN script property in that Apps Script project:
+  submissionToken: "submission-123"
+};
+
+const TASKS = [
+  { id: "opened-all", label: "Open and read all 8 messages",
+    pass: () => Object.keys(opened).length === emails.length },
+  { id: "classified-all", label: "Classify every message",
+    pass: () => Object.keys(sorted).length === emails.length },
+  { id: "all-correct", label: "Classify every message correctly",
+    pass: () => emails.every(e => sorted[e.id] === e.correct) }
+];
+
 const OPTIONS = [
   { v: "keep", danger: false, title: "Keep — legitimate business email",
     sub: "From a known person or verified vendor; no manipulation." },
@@ -234,6 +283,7 @@ const emails = [
 
 let current = null;
 const sorted = {}; // id -> chosen option value
+const opened = {}; // id -> true once read
 
 const mailList = document.getElementById('mailList');
 const mailReader = document.getElementById('mailReader');
@@ -265,6 +315,7 @@ function renderList() {
 
 function openMail(id) {
   current = id;
+  opened[id] = true;
   const e = emails.find(x => x.id === id);
   const chosen = sorted[id];
   const answered = !!chosen;
@@ -328,10 +379,13 @@ function updateProgress() {
 document.getElementById('resetBtn').addEventListener('click', () => {
   current = null;
   for (const k in sorted) delete sorted[k];
+  for (const k in opened) delete opened[k];
   updateProgress();
   resultsPanel.classList.remove('show');
   mailReader.innerHTML = '<p class="mr-empty">Select a message from the list to read it.</p>';
   renderList();
+  document.getElementById('sendStatus').className = 'submit-status';
+  document.getElementById('sendStatus').textContent = '';
 });
 
 submitBtn.addEventListener('click', () => {
@@ -354,6 +408,171 @@ submitBtn.addEventListener('click', () => {
 });
 
 renderList();
+
+/* =====================================================================
+   DEPENDENCY-FREE SCREENSHOT CAPTURE
+   Clones the workspace, inlines computed styles, rasterizes through an
+   SVG <foreignObject>, and returns a PNG data URL. Falls back to a plain
+   canvas-drawn text receipt if that render is blocked by the browser.
+   ===================================================================== */
+const STYLE_PROPS = ["display","position","top","left","right","bottom","width","height",
+  "min-width","max-width","min-height","margin","padding","border","border-radius",
+  "border-color","border-width","border-style","background","background-color",
+  "color","font","font-family","font-size","font-weight","font-style","line-height",
+  "letter-spacing","text-align","text-transform","text-decoration","white-space",
+  "overflow","opacity","box-shadow","box-sizing","flex","flex-direction","flex-wrap",
+  "align-items","justify-content","gap","grid-template-columns","fill","stroke"];
+
+function cloneWithStyles(src) {
+  const clone = src.cloneNode(false);
+  if (src.nodeType === 1) {
+    const cs = getComputedStyle(src);
+    let css = "";
+    for (const p of STYLE_PROPS) { const val = cs.getPropertyValue(p); if (val) css += p + ":" + val + ";"; }
+    clone.setAttribute("style", css);
+    clone.removeAttribute("class");
+  }
+  for (const child of src.childNodes) {
+    if (child.nodeType === 1 || (child.nodeType === 3 && child.textContent.trim() !== "")) {
+      clone.appendChild(cloneWithStyles(child));
+    }
+  }
+  return clone;
+}
+
+async function capturePNG(node) {
+  const rect = node.getBoundingClientRect();
+  const w = Math.max(1, Math.ceil(rect.width)), h = Math.max(1, Math.ceil(rect.height));
+  const clone = cloneWithStyles(node);
+  clone.setAttribute("style", (clone.getAttribute("style") || "") + ";margin:0;background:#fff;width:" + w + "px;");
+  const xml = new XMLSerializer().serializeToString(clone);
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+    '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+    '<div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff">' + xml + '</div>' +
+    '</foreignObject></svg>';
+  const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const img = new Image();
+  const png = await new Promise(res => {
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.drawImage(img, 0, 0);
+        res(c.toDataURL("image/png"));
+      } catch (e) { res(null); }
+    };
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+  return png || receiptPNG();
+}
+
+function receiptPNG() {
+  const name = document.getElementById('hackerName').value || "(none)";
+  const score = emails.filter(e => sorted[e.id] === e.correct).length;
+  const lines = [
+    "Mail Triage — submission receipt",
+    "Assignment: " + CONFIG.assignmentId,
+    "Hacker: " + name,
+    "Score: " + score + " / " + emails.length,
+    ""
+  ].concat(emails.map(e => ((sorted[e.id] === e.correct) ? "[ok] " : "[--] ") + e.subject.slice(0, 46)));
+  const c = document.createElement("canvas"); c.width = 640; c.height = 44 + lines.length * 22 + 16;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "#26221A"; ctx.font = "14px monospace";
+  lines.forEach((l, i) => ctx.fillText(l, 16, 34 + i * 22));
+  return c.toDataURL("image/png");
+}
+
+/* =====================================================================
+   SUBMISSION — posts to the Apps Script web app configured above.
+   Requires a companion Code.gs deployed as a web app (see project notes).
+   ===================================================================== */
+function taskResults() {
+  return TASKS.map(t => ({ id: t.id, label: t.label, passed: !!t.pass() }));
+}
+function questionResults() {
+  return emails.map(e => ({
+    id: e.id,
+    prompt: e.subject,
+    answer: sorted[e.id] ? OPTIONS.find(o => o.v === sorted[e.id]).title : "(no answer)",
+    correct: sorted[e.id] === e.correct
+  }));
+}
+function setSendStatus(msg, cls) {
+  const el = document.getElementById('sendStatus');
+  el.className = 'submit-status' + (cls ? ' ' + cls : '');
+  el.innerHTML = msg;
+}
+
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const nameField = document.getElementById('hackerName');
+  const hackerName = nameField.value.trim();
+  if (!hackerName) {
+    setSendStatus('Enter a hacker name before submitting.', 'bad');
+    nameField.focus();
+    return;
+  }
+  const unsorted = emails.filter(e => !sorted[e.id]).length;
+  if (unsorted > 0) {
+    setSendStatus('You still have ' + unsorted + ' message' + (unsorted > 1 ? 's' : '') + ' with no classification. Classify every message, then submit.', 'bad');
+    return;
+  }
+  if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.startsWith('PASTE_')) {
+    setSendStatus('This lab isn\u2019t wired to a submission endpoint yet. Ask your instructor to set APPS_SCRIPT_URL.', 'bad');
+    return;
+  }
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+  setSendStatus('Capturing your work and submitting…', 'work');
+
+  const tasks = taskResults();
+  const questions = questionResults();
+  const earned = tasks.filter(t => t.passed).length + questions.filter(q => q.correct).length;
+  const total = tasks.length + questions.length;
+
+  let screenshot;
+  try { screenshot = await capturePNG(document.querySelector('.workspace')); }
+  catch (e) { screenshot = receiptPNG(); }
+
+  const payload = {
+    assignmentId: CONFIG.assignmentId,
+    hackerName: hackerName.slice(0, 40),
+    clientTimestamp: new Date().toISOString(),
+    objectives: CONFIG.objectives,
+    tasks: tasks,
+    questions: questions,
+    score: { earned: earned, total: total },
+    screenshot: screenshot,
+    submissionToken: CONFIG.submissionToken
+  };
+
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const out = await res.json();
+    if (out && out.success) {
+      const link = out.docUrl ? ' <a href="' + out.docUrl + '" target="_blank" rel="noopener">View submission record ↗</a>' : '';
+      setSendStatus('Submitted — ' + earned + ' / ' + total + ' recorded for ' + hackerName + '.' + link, 'good');
+    } else {
+      setSendStatus('The server rejected the submission' + (out && out.error ? ': ' + out.error : '.') + ' Tell your instructor and try again.', 'bad');
+      sendBtn.disabled = false;
+    }
+  } catch (err) {
+    try {
+      await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+      setSendStatus('Submitted, but this browser blocked the confirmation reply. Confirm receipt with your instructor.', 'work');
+    } catch (err2) {
+      setSendStatus('Couldn\u2019t reach the submission server. Check your connection and try again.', 'bad');
+      sendBtn.disabled = false;
+    }
+  }
+});
 </script>
 
 </body>
