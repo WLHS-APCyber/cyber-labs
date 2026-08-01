@@ -34,6 +34,26 @@
   --body: 'Public Sans', sans-serif;
   --mono: 'Courier Prime', monospace;    /* case numbers, data, timestamps */
 
+  /* Legacy aliases: earlier labs reference these names directly in their
+     own <style> blocks. Keeping them mapped to the new palette means those
+     labs don't need individual edits every time the palette changes. */
+  --cyan: var(--teal);
+  --cyan-dim: var(--teal-wash);
+  --amber: var(--ochre);
+  --amber-dim: var(--ochre-wash);
+  --violet: var(--plum);
+  --violet-dim: var(--plum-wash);
+  --green: var(--teal);      /* "correct" badges reuse the teal accent, not unit-4's moss */
+  --green-dim: var(--teal-wash);
+  --red: var(--brick);
+  --red-dim: var(--brick-wash);
+
+  /* More legacy aliases — text-color names from an earlier draft, still
+     referenced directly inside individual lab pages' own <style> blocks. */
+  --text-dim: var(--ink-soft);
+  --text-on-paper: var(--ink);
+  --text-on-paper-dim: var(--ink-soft);
+
   --radius: 3px;   /* paper doesn't round much */
   --radius-lg: 4px;
 }
