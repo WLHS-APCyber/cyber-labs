@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site Survey — Riverstone Outdoor Co. | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .sitecard {
+    font-family: var(--mono); font-size: 0.74rem; color: var(--ink-soft);
+    border: 1px solid var(--paper-dark); background: var(--paper-card);
+    padding: 0.6rem 0.8rem; min-width: 220px;
+  }
+  .sitecard b { color: var(--ink); }
+  .sitecard span { color: var(--ochre); font-weight: 700; }
+
+  .survey-grid { display: grid; grid-template-columns: 300px 1fr; gap: 1.2rem; padding: 1.3rem; align-items: start; }
+  @media (max-width: 920px) { .survey-grid { grid-template-columns: 1fr; } }
+
+  .subcard { background: var(--paper-bg); border: 1px solid var(--paper-dark); padding: 1rem; }
+  .subcard h2 { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.7rem; color: var(--ink-soft); margin: 0 0 0.7rem; }
+
+  .cart { position: sticky; top: 90px; }
+  .carthint { font-size: 0.76rem; color: var(--ink-faint); margin: 0 0 0.8rem; }
+  .item {
+    display: flex; gap: 0.6rem; align-items: center; width: 100%; text-align: left; cursor: grab;
+    background: var(--paper-card); border: 1px solid var(--paper-dark); padding: 0.55rem 0.65rem;
+    color: var(--ink); font: inherit; margin-bottom: 0.55rem; transition: border-color 0.12s;
+  }
+  .item:hover { border-color: var(--ochre); }
+  .item[aria-pressed="true"] { border-color: var(--ochre); box-shadow: inset 0 0 0 2px var(--ochre-wash); background: var(--ochre-wash); }
+  .item[data-empty="true"] { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
+  .item:active { cursor: grabbing; }
+  .item .glyph { flex: 0 0 34px; height: 34px; display: grid; place-items: center; }
+  .item .meta { min-width: 0; }
+  .item .nm { font-weight: 600; font-size: 0.82rem; line-height: 1.2; }
+  .item .itag { font-family: var(--mono); font-size: 0.66rem; color: var(--ink-faint); margin-top: 0.1rem; }
+  .item .qty { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; color: var(--ochre);
+    border: 1px solid var(--ochre); padding: 0.05rem 0.4rem; white-space: nowrap; }
+  .item[data-empty="true"] .qty { color: var(--ink-faint); border-color: var(--paper-dark); }
+
+  .planwrap { background: var(--paper-bg); border: 1px solid var(--paper-dark); padding: 0.8rem; overflow: hidden; }
+  svg.plan { display: block; width: 100%; height: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.5rem; font-family: var(--mono); }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 0.3rem; vertical-align: -1px; }
+  .lg-zone i { background: var(--ochre-wash); border: 1px dashed var(--ochre); }
+  .lg-done i { background: var(--teal-wash); border: 1px solid var(--teal); }
+
+  .ops { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 680px) { .ops { grid-template-columns: 1fr; } }
+  .meterhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; font-size: 0.84rem; }
+  .meterhead b { font-family: var(--mono); color: var(--ochre); }
+  .segbar { display: flex; gap: 3px; }
+  .seg { height: 8px; flex: 1; background: var(--paper-card); border: 1px solid var(--paper-dark); }
+  .seg.on { background: var(--teal); border-color: var(--teal); }
+  .verdict { margin-top: 0.6rem; font-size: 0.8rem; color: var(--ink-soft); }
+  .verdict.pass { color: var(--teal); }
+  .verdict.pass b { color: var(--teal); }
+
+  .manifest { font-family: var(--mono); font-size: 0.76rem; margin: 0; padding: 0; list-style: none; }
+  .manifest li { display: flex; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px dashed var(--line); color: var(--ink-soft); }
+  .manifest li:last-child { border-bottom: none; }
+  .manifest .st { flex: 0 0 16px; }
+  .manifest .ok { color: var(--teal); }
+  .manifest .no { color: var(--ink-faint); }
+
+  .q { border: 1px solid var(--paper-dark); padding: 0.8rem 0.9rem; margin-bottom: 0.7rem; background: var(--paper-card); }
+  .q .prompt { font-weight: 600; font-size: 0.86rem; margin-bottom: 0.55rem; }
+  .q .qnum { font-family: var(--mono); color: var(--ochre); font-size: 0.7rem; margin-right: 0.4rem; }
+  .qopt { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.4rem 0.5rem; cursor: pointer; border: 1px solid transparent; font-size: 0.8rem; }
+  .qopt:hover { background: var(--paper-bg); }
+  .qopt input { margin-top: 0.2rem; }
+  .q[data-state="right"] { border-color: var(--teal); }
+  .q[data-state="wrong"] { border-color: var(--brick); }
+  .qfeedback { font-size: 0.78rem; margin-top: 0.5rem; display: none; }
+  .q[data-state="right"] .qfeedback { display: block; color: var(--teal); }
+  .q[data-state="wrong"] .qfeedback { display: block; color: var(--brick); }
+
+  .status-line { margin-top: 0.7rem; font-size: 0.8rem; min-height: 1.2em; }
+  .status-line.good { color: var(--teal); }
+  .status-line.bad { color: var(--brick); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dragging .zone-open .zone-target { animation: pulseZone 1.3s ease-in-out infinite; }
+    @keyframes pulseZone { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Case Files <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 1.1 — Control Types</span>
+    <span class="obj-chip">Obj 1.2 — Physical Security</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.6rem;">Site Survey — East Distribution Center</h1>
+  <p class="lede">
+    Place the right hardware in the right spot to protect the network operations room and
+    keep a record of who comes through the door. The staging cart holds more gear than you
+    need — some of it is the wrong tool for the job.
+  </p>
+
+  <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+    <div class="sitecard">
+      <div><b>Facility:</b> Riverstone Outdoor Co. — East Distribution Center</div>
+      <div><b>Protected asset:</b> <span>Network Operations Room</span> (Room 1B)</div>
+      <div><b>Role:</b> Physical security lead</div>
+    </div>
+  </div>
+
+  <div class="case-brief">
+    ▲ <b>Marcus Webb, Facilities Director:</b> "The ops room in the East wing holds our core
+    switching and inventory servers. Anyone can walk down that corridor right now. I've approved
+    your equipment request — get it installed." Your survey calls for four things:
+    <b>video that records who reaches the ops room</b>, a <b>door reader strong enough to trust</b>,
+    <b>signage that warns people off</b>, and a <b>record of visitors at reception</b>.
+  </div>
+
+  <div class="workspace">
+    <div class="survey-grid">
+
+      <!-- STAGING CART -->
+      <section class="subcard cart" aria-label="Staging cart">
+        <h2>Staging cart</h2>
+        <p class="carthint">Select an item, then a location — or drag it onto the plan. Click a placed item to take it back.</p>
+        <div id="shelf"></div>
+      </section>
+
+      <!-- PLAN + OPS -->
+      <div>
+        <div class="planwrap" id="planwrap">
+          <svg class="plan" id="plan" viewBox="0 0 820 540" role="group"
+               aria-label="East Distribution Center floor plan with placement zones" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .wall { fill: none; stroke: #26221A; stroke-width: 3; }
+              .room { fill: #F2EAD3; stroke: #CBB98C; stroke-width: 1.4; }
+              .vault { fill: #EFE1C6; stroke: #26221A; stroke-width: 2.2; }
+              .door { fill: #26221A; stroke: #26221A; stroke-width: 2; }
+              .rlabel { fill: #574E38; font: 700 12px 'Courier Prime', monospace; letter-spacing: 1px; text-transform: uppercase; }
+              .rsub { fill: #8A7D5C; font: 11px 'Courier Prime', monospace; }
+              .desk { fill: #CBB98C; stroke: #574E38; stroke-width: 1.2; }
+              .ztarget-rect { fill: #EFE1C6; stroke: #96631E; stroke-width: 1.6; stroke-dasharray: 5 4; }
+              .zlabel { fill: #96631E; font: 10px 'Courier Prime', monospace; text-anchor: middle; }
+              .zone { cursor: pointer; }
+              .zone:focus-visible .zfocus { stroke: #96631E; stroke-width: 2.4; display: block; }
+              .zfocus { display: none; fill: none; }
+              .zone.zone-over .ztarget-rect { fill: #e7cfa0; }
+              .zone.zone-filled .ztarget-rect { display: none; }
+              .zone.zone-filled .zlabel { display: none; }
+              .gbody { fill: #DCEAE3; stroke: #2B6E63; stroke-width: 1.8; }
+              .gdetail { fill: #2B6E63; }
+              .gline { stroke: #2B6E63; stroke-width: 1.6; fill: none; }
+            </style>
+
+            <rect class="room" x="40" y="40" width="740" height="460" rx="4"/>
+            <rect class="room" x="62" y="62" width="186" height="118"/>
+            <text class="rlabel" x="74" y="86">Break room</text>
+            <text class="rsub" x="74" y="104">no controls req.</text>
+            <rect class="room" x="62" y="356" width="250" height="122"/>
+            <text class="rlabel" x="74" y="380">Reception</text>
+            <text class="rsub" x="74" y="398">main entrance</text>
+            <rect class="desk" x="96" y="408" width="150" height="44"/>
+            <text class="rsub" x="106" y="436">front desk</text>
+            <text class="rsub" x="350" y="330">&larr; corridor to ops room &rarr;</text>
+            <rect class="vault" x="524" y="70" width="234" height="232" rx="2"/>
+            <text class="rlabel" x="600" y="96" style="fill:#7a5216">Network Ops Room</text>
+            <text class="rsub" x="600" y="114">core switching + inventory servers</text>
+            <rect class="door" x="510" y="174" width="24" height="64" rx="2"/>
+
+            <g class="zone zone-open" data-zone="cam-door" tabindex="0" role="button"
+               aria-label="Camera mount, ops room entrance. Empty.">
+              <rect class="zfocus" x="424" y="98" width="104" height="58"/>
+              <rect class="ztarget-rect zone-target" x="430" y="104" width="92" height="46"/>
+              <text class="zlabel" x="476" y="124">cam mount</text>
+              <text class="zlabel" x="476" y="138">room entry</text>
+              <g class="placed-holder"></g>
+            </g>
+            <g class="zone zone-open" data-zone="cam-interior" tabindex="0" role="button"
+               aria-label="Camera mount, ops room interior. Empty.">
+              <rect class="zfocus" x="642" y="122" width="100" height="60"/>
+              <rect class="ztarget-rect zone-target" x="648" y="128" width="88" height="48"/>
+              <text class="zlabel" x="692" y="148">cam mount</text>
+              <text class="zlabel" x="692" y="162">interior</text>
+              <g class="placed-holder"></g>
+            </g>
+            <g class="zone zone-open" data-zone="reader-door" tabindex="0" role="button"
+               aria-label="Door reader panel. Empty.">
+              <rect class="zfocus" x="408" y="170" width="94" height="68"/>
+              <rect class="ztarget-rect zone-target" x="414" y="176" width="82" height="56"/>
+              <text class="zlabel" x="455" y="200">door</text>
+              <text class="zlabel" x="455" y="216">reader</text>
+              <g class="placed-holder"></g>
+            </g>
+            <g class="zone zone-open" data-zone="sign-door" tabindex="0" role="button"
+               aria-label="Door signage. Empty.">
+              <rect class="zfocus" x="496" y="164" width="98" height="80"/>
+              <rect class="ztarget-rect zone-target" x="502" y="170" width="86" height="68"/>
+              <text class="zlabel" x="545" y="198">door</text>
+              <text class="zlabel" x="545" y="214">signage</text>
+              <g class="placed-holder"></g>
+            </g>
+            <g class="zone zone-open" data-zone="desk" tabindex="0" role="button"
+               aria-label="Reception desk surface. Empty.">
+              <rect class="zfocus" x="104" y="406" width="116" height="50"/>
+              <rect class="ztarget-rect zone-target" x="110" y="412" width="104" height="38"/>
+              <text class="zlabel" x="162" y="427">reception</text>
+              <text class="zlabel" x="162" y="441">desk</text>
+              <g class="placed-holder"></g>
+            </g>
+          </svg>
+          <div class="legend">
+            <span class="lg-zone"><i></i>Open placement zone</span>
+            <span class="lg-done"><i></i>Installed correctly</span>
+          </div>
+        </div>
+
+        <div class="ops">
+          <section class="subcard" aria-label="Site readiness">
+            <h2>Site readiness</h2>
+            <div class="meterhead"><span>Objectives met</span><b id="scoreText">0 / 9</b></div>
+            <div class="segbar" id="segbar" aria-hidden="true"></div>
+            <p class="verdict" id="verdict">Nothing installed yet. Start with video coverage of the ops room.</p>
+          </section>
+          <section class="subcard" aria-label="Deployment manifest">
+            <h2>Deployment manifest</h2>
+            <ul class="manifest" id="manifest"></ul>
+          </section>
+        </div>
+
+        <section class="subcard" aria-label="Knowledge check" style="margin-top:1rem;">
+          <h2>Knowledge check</h2>
+          <div id="questions"></div>
+          <p class="status-line" id="statusLine"></p>
+        </section>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <span style="font-family:var(--mono);">Score updates live as you place items and answer questions.</span>
+    <button class="btn" id="resetBtn">Reset lab</button>
+  </div>
+
+</main>
+
+<p class="sr" id="live" role="status" aria-live="polite"></p>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 1.1 &amp; 1.2. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+var ITEMS = {
+  ipcam:       { name: "Waypoint IP-7 dome", tag: "PoE · TCP/IP", qty: 2, glyph: "cam" },
+  analogcam:   { name: "Coax CCTV camera", tag: "Analog · DVR only", qty: 1, glyph: "cam" },
+  smartreader: { name: "KeyPass SC-4 reader", tag: "Contactless smart card", qty: 1, glyph: "reader" },
+  proxreader:  { name: "ProxGate 125 reader", tag: "125 kHz prox · ID only", qty: 1, glyph: "reader" },
+  magreader:   { name: "TrackStripe swipe reader", tag: "Mag stripe · contact", qty: 1, glyph: "reader" },
+  sign:        { name: "Restricted-area placard", tag: "Authorized personnel only", qty: 1, glyph: "sign" },
+  register:    { name: "Visitor sign-in register", tag: "Reception guest log", qty: 1, glyph: "book" }
+};
+var SHELF_ORDER = ["ipcam", "analogcam", "smartreader", "proxreader", "magreader", "sign", "register"];
+
+var ZONES = {
+  "cam-door":     { accept: "ipcam", label: "Camera — ops room entrance" },
+  "cam-interior": { accept: "ipcam", label: "Camera — ops room interior" },
+  "reader-door":  { accept: "smartreader", label: "Ops room door reader" },
+  "sign-door":    { accept: "sign", label: "Ops room door signage" },
+  "desk":         { accept: "register", label: "Reception register" }
+};
+
+var TASKS = [
+  { id: "cam-entry",  zone: "cam-door",     label: "Mount an IP camera covering the ops room entrance" },
+  { id: "cam-inside", zone: "cam-interior", label: "Add a second IP camera inside the ops room" },
+  { id: "reader",     zone: "reader-door",  label: "Gate the ops room door with a contactless smart-card reader" },
+  { id: "sign",       zone: "sign-door",    label: "Post the restricted-area placard on the ops room door" },
+  { id: "register",   zone: "desk",         label: "Set the visitor register on the reception desk" }
+];
+
+var QUESTIONS = [
+  { id: "q1", answer: "a",
+    prompt: "Ops room footage has to travel across the company's existing data network to the recorder. Which camera fits that requirement?",
+    options: [
+      { v: "a", t: "A PoE / IP network camera" },
+      { v: "b", t: "An analog CCTV camera on coax" },
+      { v: "c", t: "A battery cam that only writes to a local SD card" },
+      { v: "d", t: "A USB webcam tethered to one PC" }
+    ],
+    why: "IP/PoE cameras encode video as network traffic, so footage rides the same TCP/IP network as the recorder. Analog feeds need separate coax and a DVR." },
+  { id: "q2", answer: "a",
+    prompt: "The ops room badge reader should verify more than a card's serial number and resist cloning. Which reader meets that bar?",
+    options: [
+      { v: "a", t: "A contactless smart-card reader that exchanges encrypted credential data" },
+      { v: "b", t: "A 125 kHz proximity reader that returns only a card ID" },
+      { v: "c", t: "A magnetic-stripe swipe reader" },
+      { v: "d", t: "A printed-barcode scanner" }
+    ],
+    why: "Smart cards store encrypted data and authenticate without exposing a static ID, so they resist the simple ID cloning that defeats basic prox cards." },
+  { id: "q3", answer: "a",
+    prompt: "The \"Authorized personnel only\" placard works mainly by discouraging people before they try the door. In CompTIA's control types, that is a:",
+    options: [
+      { v: "a", t: "Deterrent control" },
+      { v: "b", t: "Corrective control" },
+      { v: "c", t: "Compensating control" },
+      { v: "d", t: "Recovery control" }
+    ],
+    why: "Signage doesn't physically block entry — it discourages it. A control that discourages an action before it happens is a deterrent control." },
+  { id: "q4", answer: "a",
+    prompt: "The ops room cameras don't stop entry; they let you review who came and went afterward. That role makes video surveillance primarily a:",
+    options: [
+      { v: "a", t: "Detective control" },
+      { v: "b", t: "Preventive control" },
+      { v: "c", t: "Directive control" },
+      { v: "d", t: "A physical control with no other function" }
+    ],
+    why: "Recording activity for after-the-fact review identifies what happened rather than preventing it — the definition of a detective control." }
+];
+
+var TOTAL = TASKS.length + QUESTIONS.length;
+
+var state = {
+  placements: { "cam-door": null, "cam-interior": null, "reader-door": null, "sign-door": null, "desk": null },
+  selected: null,
+  answers: {}
+};
+
+var $ = function(s, r) { return (r || document).querySelector(s); };
+var $$ = function(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var live = $("#live");
+function announce(msg) { live.textContent = ""; setTimeout(function() { live.textContent = msg; }, 30); }
+
+function glyphMarkup(kind) {
+  if (kind === "cam") {
+    return '<rect class="gbody" x="-15" y="-9" width="26" height="16" rx="4"/>' +
+      '<circle class="gdetail" cx="-2" cy="-1" r="4.2"/>' +
+      '<rect class="gdetail" x="11" y="-3" width="6" height="4" rx="1"/>' +
+      '<line class="gline" x1="-6" y1="7" x2="-6" y2="13"/>';
+  }
+  if (kind === "reader") {
+    return '<rect class="gbody" x="-11" y="-15" width="22" height="30" rx="4"/>' +
+      '<rect class="gdetail" x="-6" y="-10" width="12" height="3" rx="1.5"/>' +
+      '<circle class="gdetail" cx="0" cy="6" r="3.4"/>';
+  }
+  if (kind === "sign") {
+    return '<rect class="gbody" x="-17" y="-12" width="34" height="24" rx="3"/>' +
+      '<path class="gline" d="M0 -7 L7 6 L-7 6 Z"/>' +
+      '<line class="gline" x1="0" y1="-2" x2="0" y2="2"/>' +
+      '<circle class="gdetail" cx="0" cy="4.5" r="0.9"/>';
+  }
+  if (kind === "book") {
+    return '<rect class="gbody" x="-13" y="-15" width="26" height="30" rx="3"/>' +
+      '<line class="gline" x1="-7" y1="-8" x2="7" y2="-8"/>' +
+      '<line class="gline" x1="-7" y1="-2" x2="7" y2="-2"/>' +
+      '<line class="gline" x1="-7" y1="4" x2="3" y2="4"/>';
+  }
+  return "";
+}
+var ZONE_CENTER = {
+  "cam-door": { x: 476, y: 127 }, "cam-interior": { x: 692, y: 152 },
+  "reader-door": { x: 455, y: 204 }, "sign-door": { x: 545, y: 204 }, "desk": { x: 162, y: 431 }
+};
+
+function remaining(type) {
+  var used = 0;
+  for (var z in state.placements) { if (state.placements[z] === type) used++; }
+  return ITEMS[type].qty - used;
+}
+
+function renderShelf() {
+  var shelf = $("#shelf");
+  shelf.innerHTML = "";
+  SHELF_ORDER.forEach(function(type) {
+    var it = ITEMS[type], rem = remaining(type), empty = rem <= 0;
+    var btn = document.createElement("button");
+    btn.className = "item";
+    btn.type = "button";
+    btn.setAttribute("data-type", type);
+    btn.setAttribute("data-empty", empty ? "true" : "false");
+    btn.setAttribute("aria-pressed", state.selected === type ? "true" : "false");
+    btn.setAttribute("draggable", empty ? "false" : "true");
+    btn.disabled = empty;
+    btn.setAttribute("aria-label", it.name + ", " + it.tag + ", " + rem + " available");
+    btn.innerHTML =
+      '<span class="glyph"><svg viewBox="-20 -20 40 40" width="34" height="34" aria-hidden="true">' + glyphMarkup(it.glyph) + '</svg></span>' +
+      '<span class="meta"><span class="nm">' + it.name + '</span><span class="itag">' + it.tag + '</span></span>' +
+      '<span class="qty">' + rem + ' left</span>';
+    btn.addEventListener("click", function() { toggleSelect(type); });
+    btn.addEventListener("dragstart", function(e) {
+      if (empty) { e.preventDefault(); return; }
+      state.selected = type; syncSelected();
+      e.dataTransfer.setData("text/plain", type);
+      e.dataTransfer.effectAllowed = "copy";
+    });
+    btn.addEventListener("dragend", function() { clearOver(); });
+    shelf.appendChild(btn);
+  });
+}
+
+function syncSelected() {
+  $$(".item").forEach(function(b) {
+    b.setAttribute("aria-pressed", b.getAttribute("data-type") === state.selected ? "true" : "false");
+  });
+}
+
+function toggleSelect(type) {
+  if (remaining(type) <= 0 && state.selected !== type) return;
+  state.selected = (state.selected === type) ? null : type;
+  syncSelected();
+  if (state.selected) announce("Selected " + ITEMS[type].name + ". Choose a location on the plan.");
+  setStatus("");
+}
+
+function renderPlan() {
+  var dragging = state.selected != null;
+  document.body.classList.toggle("dragging", dragging);
+  $$(".zone").forEach(function(g) {
+    var z = g.getAttribute("data-zone");
+    var placed = state.placements[z];
+    var holder = g.querySelector(".placed-holder");
+    g.classList.toggle("zone-filled", !!placed);
+    g.classList.toggle("zone-open", !placed);
+    holder.innerHTML = "";
+    if (placed) {
+      var c = ZONE_CENTER[z];
+      var grp = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      grp.setAttribute("class", "placed-glyph");
+      grp.setAttribute("transform", "translate(" + c.x + "," + c.y + ")");
+      grp.innerHTML = glyphMarkup(ITEMS[placed].glyph);
+      holder.appendChild(grp);
+      g.setAttribute("aria-label", ZONES[z].label + ". Installed: " + ITEMS[placed].name + ". Activate to remove.");
+    } else {
+      g.setAttribute("aria-label", ZONES[z].label + ". Empty. Select an item, then activate to place it.");
+    }
+  });
+}
+
+function tasksState() {
+  return TASKS.map(function(t) {
+    return { id: t.id, label: t.label, passed: state.placements[t.zone] === ZONES[t.zone].accept };
+  });
+}
+function questionsState() {
+  return QUESTIONS.map(function(q) {
+    var a = state.answers[q.id];
+    return { id: q.id, correct: a === q.answer };
+  });
+}
+
+function renderOps() {
+  var ts = tasksState(), qs = questionsState();
+  var earned = ts.filter(function(x) { return x.passed; }).length + qs.filter(function(x) { return x.correct; }).length;
+
+  $("#scoreText").textContent = earned + " / " + TOTAL;
+  var seg = $("#segbar"); seg.innerHTML = "";
+  for (var i = 0; i < TOTAL; i++) {
+    var s = document.createElement("span");
+    s.className = "seg" + (i < earned ? " on" : "");
+    seg.appendChild(s);
+  }
+  var v = $("#verdict");
+  if (earned === TOTAL) {
+    v.className = "verdict pass";
+    v.innerHTML = "<b>Site secured.</b> Every control is in place and every check is right.";
+  } else {
+    v.className = "verdict";
+    var left = TOTAL - earned;
+    v.textContent = left + (left === 1 ? " item" : " items") + " still open. Check the manifest for what's missing.";
+  }
+
+  var m = $("#manifest"); m.innerHTML = "";
+  ts.forEach(function(t) { m.appendChild(manifestRow(t.passed, t.label)); });
+  qs.forEach(function(q, i) { m.appendChild(manifestRow(q.correct, "Q" + (i + 1) + " answered correctly")); });
+
+  return { earned: earned, tasks: ts, questions: qs };
+}
+function manifestRow(ok, label) {
+  var li = document.createElement("li");
+  li.innerHTML = '<span class="st ' + (ok ? "ok" : "no") + '">' + (ok ? "\u2713" : "\u25cb") + '</span>' +
+    '<span>' + label + '</span>';
+  return li;
+}
+
+function rejectMessage(zone, type) {
+  var accept = ZONES[zone].accept;
+  if (accept === "ipcam") {
+    if (type === "analogcam") return "Coax CCTV feeds run to a separate DVR — they don't ride your TCP/IP network. Use the PoE/IP dome here.";
+    return "This mount is for an IP video camera, not " + ITEMS[type].name.toLowerCase() + ".";
+  }
+  if (accept === "smartreader") {
+    if (type === "proxreader") return "A 125 kHz prox reader returns only a card ID and is easy to clone. The ops room needs the contactless smart-card reader.";
+    if (type === "magreader") return "Magnetic-stripe cards require contact and copy in seconds. Choose the contactless smart-card reader instead.";
+    return "This panel is for a door access reader, not " + ITEMS[type].name.toLowerCase() + ".";
+  }
+  if (accept === "sign") return "This spot is for door signage. Place the restricted-area placard here.";
+  if (accept === "register") return "The reception desk is for the visitor register. Place it here.";
+  return "That item doesn't belong here.";
+}
+
+function place(zone, type) {
+  if (state.placements[zone]) {
+    announce("That location is already taken. Remove it first.");
+    setStatus("That location already has " + ITEMS[state.placements[zone]].name + ". Activate it to take it back.", "bad");
+    return false;
+  }
+  if (ZONES[zone].accept !== type) {
+    setStatus(rejectMessage(zone, type), "bad");
+    announce("Wrong item. " + rejectMessage(zone, type));
+    return false;
+  }
+  if (remaining(type) <= 0) {
+    setStatus("No " + ITEMS[type].name + " left in the cart.", "bad");
+    return false;
+  }
+  state.placements[zone] = type;
+  state.selected = null;
+  setStatus(ITEMS[type].name + " installed at " + ZONES[zone].label.toLowerCase() + ".", "good");
+  announce(ITEMS[type].name + " installed.");
+  refresh();
+  return true;
+}
+function pickup(zone) {
+  var type = state.placements[zone];
+  if (!type) return;
+  state.placements[zone] = null;
+  setStatus(ITEMS[type].name + " returned to the cart.", "");
+  announce(ITEMS[type].name + " removed from " + ZONES[zone].label.toLowerCase() + ".");
+  refresh();
+}
+function zoneActivate(zone) {
+  if (state.placements[zone]) { pickup(zone); return; }
+  if (!state.selected) {
+    setStatus("Select an item from the staging cart first.", "");
+    announce("Select an item from the staging cart first.");
+    return;
+  }
+  place(zone, state.selected);
+}
+
+function clearOver() { $$(".zone").forEach(function(g) { g.classList.remove("zone-over"); }); }
+function wireZones() {
+  $$(".zone").forEach(function(g) {
+    var zone = g.getAttribute("data-zone");
+    g.addEventListener("click", function() { zoneActivate(zone); });
+    g.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); zoneActivate(zone); }
+    });
+    g.addEventListener("dragover", function(e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; g.classList.add("zone-over"); });
+    g.addEventListener("dragenter", function(e) { e.preventDefault(); g.classList.add("zone-over"); });
+    g.addEventListener("dragleave", function() { g.classList.remove("zone-over"); });
+    g.addEventListener("drop", function(e) {
+      e.preventDefault(); g.classList.remove("zone-over");
+      var type = e.dataTransfer.getData("text/plain");
+      if (type) place(zone, type);
+    });
+  });
+}
+
+function renderQuestions() {
+  var wrap = $("#questions"); wrap.innerHTML = "";
+  QUESTIONS.forEach(function(q, i) {
+    var div = document.createElement("div");
+    div.className = "q";
+    div.setAttribute("data-qid", q.id);
+    var opts = q.options.map(function(o) {
+      var checked = state.answers[q.id] === o.v ? " checked" : "";
+      return '<label class="qopt"><input type="radio" name="' + q.id + '" value="' + o.v + '"' + checked + '>' +
+        '<span>' + o.t + '</span></label>';
+    }).join("");
+    div.innerHTML =
+      '<div class="prompt"><span class="qnum">Q' + (i + 1) + '</span>' + q.prompt + '</div>' +
+      opts +
+      '<div class="qfeedback">' + q.why + '</div>';
+    wrap.appendChild(div);
+  });
+  wrap.addEventListener("change", function(e) {
+    if (e.target && e.target.name) {
+      state.answers[e.target.name] = e.target.value;
+      markQuestion(e.target.name);
+      refresh();
+    }
+  });
+}
+function markQuestion(qid) {
+  var q = QUESTIONS.filter(function(x) { return x.id === qid; })[0];
+  var el = $('.q[data-qid="' + qid + '"]');
+  if (!el) return;
+  var a = state.answers[qid];
+  el.setAttribute("data-state", a ? (a === q.answer ? "right" : "wrong") : "");
+}
+
+function refresh() {
+  renderShelf();
+  renderPlan();
+  renderOps();
+}
+
+function setStatus(msg, cls) {
+  var s = $("#statusLine");
+  s.className = "status-line" + (cls ? " " + cls : "");
+  s.textContent = msg || "";
+}
+
+$("#resetBtn").addEventListener("click", function() {
+  state.placements = { "cam-door": null, "cam-interior": null, "reader-door": null, "sign-door": null, "desk": null };
+  state.selected = null;
+  state.answers = {};
+  $$(".q").forEach(function(q) { q.removeAttribute("data-state"); });
+  $$('input[type="radio"]').forEach(function(r) { r.checked = false; });
+  setStatus("");
+  refresh();
+  announce("Lab reset. The plan is clear and the cart is full again.");
+});
+
+wireZones();
+renderQuestions();
+refresh();
+</script>
+
+</body>
+</html>

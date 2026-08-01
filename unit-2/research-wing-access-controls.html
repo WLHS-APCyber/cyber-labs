@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secure the Fulfillment Wing — Riverstone Outdoor Co. | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .console-wrap { padding: 1.3rem; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .console-wrap { grid-template-columns: 1fr; } }
+
+  .subcard { background: var(--paper-bg); border: 1px solid var(--paper-dark); padding: 1rem; margin-bottom: 1rem; }
+  .subcard h2 { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.7rem; color: var(--ink-soft); margin: 0 0 0.7rem; }
+  .subcard p.desc { margin: 0; font-size: 0.84rem; color: var(--ink-soft); }
+
+  .console-bar { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.9rem; background: var(--paper-card);
+    border: 1px solid var(--paper-dark); border-bottom: none; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-soft); }
+  .console-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ochre); }
+  .console-bar b { color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 0.95rem; }
+  .console-body { border: 1px solid var(--paper-dark); border-top: none; background: var(--paper-card); padding: 1rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px dashed var(--line); }
+  th { color: var(--ink-soft); font-weight: 600; font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; }
+  td.center, th.center { text-align: center; }
+
+  .door-list { display: grid; gap: 0.7rem; }
+  .door { border: 1px solid var(--paper-dark); padding: 0.8rem; background: var(--paper-bg); }
+  .door .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between; }
+  .door h3 { margin: 0; font-size: 0.9rem; font-family: var(--body); font-weight: 700; }
+  .field { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  label.inline { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.82rem; }
+  select, input[type=text] {
+    background: #fff; color: var(--ink); border: 1px solid var(--paper-dark); padding: 0.4rem 0.5rem; font: inherit; min-width: 120px; font-size: 0.82rem;
+  }
+  .switch { appearance: none; width: 38px; height: 22px; border-radius: 99px; position: relative; cursor: pointer;
+    border: 1px solid var(--paper-dark); background: var(--paper-dark); transition: background 0.15s; }
+  .switch:checked { background: var(--teal); border-color: var(--teal); }
+  .switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+  .switch:checked::after { left: 18px; }
+  input[type=checkbox].grant { width: 16px; height: 16px; accent-color: var(--teal); cursor: pointer; }
+
+  .pending { display: none; align-items: center; gap: 0.6rem; background: var(--ochre-wash); color: var(--ochre); padding: 0.55rem 0.8rem; margin-top: 0.8rem; font-size: 0.82rem; font-weight: 700; }
+  .pending.show { display: flex; }
+
+  .bar-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-top: 0.8rem; }
+  .appliednote { font-family: var(--mono); font-size: 0.74rem; color: var(--ink-faint); }
+
+  .tasklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .tasklist li { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.82rem; }
+  .mark { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--paper-dark); display: grid; place-items: center; font-size: 11px; margin-top: 0.1rem; }
+  .mark.pass { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  .q2 { border-top: 1px dashed var(--line); padding-top: 0.6rem; margin-top: 0.6rem; }
+  .q2 p { margin: 0 0 0.45rem; font-size: 0.82rem; }
+  .opt2 { display: flex; gap: 0.4rem; align-items: flex-start; margin: 0.3rem 0; font-size: 0.8rem; cursor: pointer; }
+  .opt2 input { margin-top: 0.15rem; }
+
+  .score-count { font-weight: 700; font-family: var(--mono); color: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Case Files <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 1.2 — Physical Security</span>
+    <span class="obj-chip">Obj 2.4 — Indicators of Compromise</span>
+    <span class="obj-chip">Obj 4.6 — Security Monitoring</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.6rem;">Secure the Fulfillment Wing</h1>
+  <p class="lede">
+    Riverstone's new fulfillment wing opens Monday. Configure the access control console below
+    so only the right people reach the right rooms — then apply your configuration.
+  </p>
+
+  <div class="case-brief">
+    ▲ <b>Marcus Webb, Facilities Director:</b> the new wing has to be restricted to authorized
+    warehouse staff, tailgating at the wing entrance has to stop, the electronics &amp; optics
+    cage needs a second factor, the lobby needs less exposure after hours, and any forced-entry
+    attempt has to be detected. Configure the controls, then <b>Apply configuration</b>.
+  </div>
+
+  <div class="workspace">
+    <div class="console-wrap">
+
+      <!-- LEFT: simulated console -->
+      <div>
+        <div class="console-bar"><span class="dot"></span> <b>Riverstone AccessOps</b> · East Wing · operator m.webb</div>
+        <div class="console-body">
+
+          <div class="subcard">
+            <h2>Badge access by group</h2>
+            <table>
+              <thead><tr>
+                <th>Group</th>
+                <th class="center">Lobby (D1)</th>
+                <th class="center">Fulfillment Vestibule (D2)</th>
+                <th class="center">Electronics Cage (D3)</th>
+              </tr></thead>
+              <tbody id="accessBody"></tbody>
+            </table>
+          </div>
+
+          <div class="subcard">
+            <h2>Doors</h2>
+            <div class="door-list" id="doorList"></div>
+          </div>
+
+          <div class="subcard">
+            <h2>Surveillance</h2>
+            <div class="door">
+              <div class="row">
+                <div><h3>Vestibule ingress camera (D2)</h3>
+                  <div style="font-size:0.78rem; color:var(--ink-faint); margin-top:0.2rem;">Covers the point of entry to the fulfillment wing.</div></div>
+                <div class="field">
+                  <label class="inline"><input type="checkbox" class="switch" id="camAssigned"> Camera assigned</label>
+                  <label class="inline"><input type="checkbox" class="switch" id="camRecording"> Recording</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pending" id="pending" role="status">
+            <span aria-hidden="true">●</span> You have unapplied changes — click <b>Apply configuration</b> to commit.
+          </div>
+          <div class="bar-row">
+            <button class="btn primary" id="applyBtn" type="button">Apply configuration</button>
+            <span class="appliednote" id="appliedNote">Last applied: never</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: lab panel -->
+      <div>
+        <div class="subcard">
+          <h2>Tasks <span class="score-count" id="taskScore" style="float:right;"></span></h2>
+          <ul class="tasklist" id="taskList"></ul>
+        </div>
+
+        <div class="subcard">
+          <h2>Knowledge check</h2>
+          <div id="questionList"></div>
+        </div>
+
+        <div class="subcard">
+          <h2>Overall score</h2>
+          <p style="margin:0;"><span class="score-count" id="overallScore">0 / 11</span></p>
+          <div class="progress-track" style="margin-top:0.6rem;"><div class="progress-fill" id="progFill"></div></div>
+          <div class="bar-row"><button class="btn" id="resetBtn">Reset lab</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 1.2, 2.4 &amp; 4.6. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+(function() {
+  "use strict";
+
+  var $ = function(s) { return document.querySelector(s); };
+  var GROUPS = ["Warehouse Staff", "Facilities", "Visitors"];
+  var DOORS = ["D1", "D2", "D3"];
+
+  function freshState() {
+    return {
+      access: {
+        "Warehouse Staff": { D1: true, D2: false, D3: false },
+        "Facilities":      { D1: true, D2: true,  D3: true },
+        "Visitors":        { D1: true, D2: false, D3: true }  // seeded wrong: remove D3
+      },
+      doors: {
+        D1: { schedule: "always" },
+        D2: { interlock: false },
+        D3: { secondFactor: "badge", alarm: false }
+      },
+      cameras: { D2: { assigned: false, recording: false } }
+    };
+  }
+  var cfg = freshState();
+  var committed = clone(cfg);
+  var lastApplied = null;
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function dirty() { return JSON.stringify(cfg) !== JSON.stringify(committed); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function(c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+
+  function renderAccess() {
+    var body = $("#accessBody"); body.innerHTML = "";
+    GROUPS.forEach(function(g) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + g + "</td>" + DOORS.map(function(d) {
+        return '<td class="center"><input type="checkbox" class="grant" data-g="' + g + '" data-d="' + d + '" ' +
+          (cfg.access[g][d] ? "checked" : "") + ' aria-label="' + g + " access to " + d + '"></td>';
+      }).join("");
+      body.appendChild(tr);
+    });
+  }
+  function renderDoors() {
+    var wrap = $("#doorList"); wrap.innerHTML = "";
+    wrap.appendChild(door_("D1", "Lobby entrance",
+      '<div class="field"><label for="d1sched">Unlock schedule</label>' +
+      '<select id="d1sched">' +
+      opt("always", "Always unlocked", cfg.doors.D1.schedule) +
+      opt("business", "Business hours only (07:00\u201319:00)", cfg.doors.D1.schedule) +
+      opt("locked", "Always locked (badge only)", cfg.doors.D1.schedule) +
+      "</select></div>"));
+    wrap.appendChild(door_("D2", "Fulfillment wing vestibule",
+      '<label class="inline"><input type="checkbox" class="switch" id="d2interlock" ' + (cfg.doors.D2.interlock ? "checked" : "") + "> Two-door interlock (mantrap)</label>"));
+    wrap.appendChild(door_("D3", "Electronics &amp; optics cage",
+      '<div class="field"><label for="d3factor">Credential</label>' +
+      '<select id="d3factor">' +
+      opt("badge", "Badge only", cfg.doors.D3.secondFactor) +
+      opt("badge_pin", "Badge + PIN", cfg.doors.D3.secondFactor) +
+      "</select>" +
+      '<label class="inline"><input type="checkbox" class="switch" id="d3alarm" ' + (cfg.doors.D3.alarm ? "checked" : "") + "> Forced / held-open alarm</label></div>"));
+    $("#camAssigned").checked = cfg.cameras.D2.assigned;
+    $("#camRecording").checked = cfg.cameras.D2.recording;
+  }
+  function door_(id, name, inner) {
+    var d = document.createElement("div"); d.className = "door";
+    d.innerHTML = '<div class="row"><div><h3>' + name + " (" + id + ')</h3></div><div class="field">' + inner + "</div></div>";
+    return d;
+  }
+  function opt(v, label, cur) { return '<option value="' + v + '"' + (cur === v ? " selected" : "") + ">" + esc(label) + "</option>"; }
+
+  function renderPending() {
+    $("#pending").classList.toggle("show", dirty());
+    $("#appliedNote").textContent = "Last applied: " + (lastApplied ? lastApplied : "never");
+  }
+
+  var TASKS = [
+    { id: "staff-access", label: "Grant Warehouse Staff access to the Fulfillment Vestibule and Electronics Cage.",
+      pass: function(s) { return s.access["Warehouse Staff"].D2 && s.access["Warehouse Staff"].D3; } },
+    { id: "visitor-deny", label: "Ensure Visitors have no access to the Electronics Cage.",
+      pass: function(s) { return s.access.Visitors.D3 === false; } },
+    { id: "interlock", label: "Enable the two-door interlock on the Fulfillment Vestibule.",
+      pass: function(s) { return s.doors.D2.interlock === true; } },
+    { id: "mfa", label: "Require Badge + PIN at the Electronics Cage.",
+      pass: function(s) { return s.doors.D3.secondFactor === "badge_pin"; } },
+    { id: "alarm", label: "Enable the forced / held-open alarm at the Electronics Cage.",
+      pass: function(s) { return s.doors.D3.alarm === true; } },
+    { id: "schedule", label: "Set the Lobby to unlock during business hours only.",
+      pass: function(s) { return s.doors.D1.schedule === "business"; } },
+    { id: "camera", label: "Assign the vestibule camera and set it to record.",
+      pass: function(s) { return s.cameras.D2.assigned && s.cameras.D2.recording; } }
+  ];
+
+  var QUESTIONS = [
+    { id: "q1", prompt: "Why does an access control vestibule reduce tailgating better than a single locked door?",
+      opts: [["a", "It is faster to walk through."],
+        ["b", "Its two interlocked doors let only one credentialed entry pass at a time, so an authorized person can't admit an unauthorized one."],
+        ["c", "It automatically records video of everyone."],
+        ["d", "It always requires a fingerprint scan."]], key: "b" },
+    { id: "q2", prompt: "A badge reader that records and timestamps every badge used at a door primarily provides which control function?",
+      opts: [["a", "Preventive"], ["b", "Deterrent"], ["c", "Detective"], ["d", "Corrective"]], key: "c" },
+    { id: "q3", prompt: "Requiring both an access badge and a PIN at the electronics cage door is an example of\u2026",
+      opts: [["a", "Single sign-on"],
+        ["b", "Multifactor authentication (something you have + something you know)"],
+        ["c", "Least privilege"], ["d", "A honeypot"]], key: "b" },
+    { id: "q4", prompt: "A forced / held-open alarm on the electronics cage door helps detect which physical-attack indicator?",
+      opts: [["a", "RFID cloning"], ["b", "Brute force (forcing the door)"], ["c", "Phishing"], ["d", "SQL injection"]], key: "b" }
+  ];
+
+  function renderTasks() {
+    var ul = $("#taskList"); ul.innerHTML = "";
+    var pass = 0;
+    TASKS.forEach(function(t) {
+      var ok = t.pass(committed); if (ok) pass++;
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="mark' + (ok ? " pass" : "") + '">' + (ok ? "\u2713" : "") + "</span><span>" + esc(t.label) + "</span>";
+      ul.appendChild(li);
+    });
+    $("#taskScore").textContent = pass + "/" + TASKS.length;
+  }
+  function renderQuestions() {
+    var box = $("#questionList"); box.innerHTML = "";
+    QUESTIONS.forEach(function(q, i) {
+      var div = document.createElement("div"); div.className = "q2";
+      div.innerHTML = "<p><b>Q" + (i + 1) + ".</b> " + esc(q.prompt) + "</p>" +
+        q.opts.map(function(o) {
+          return '<label class="opt2"><input type="radio" name="' + q.id + '" value="' + o[0] + '"> <span>' + esc(o[1]) + "</span></label>";
+        }).join("");
+      box.appendChild(div);
+    });
+  }
+
+  function evalAll() {
+    var tasks = TASKS.map(function(t) { return { id: t.id, passed: !!t.pass(committed) }; });
+    var questions = QUESTIONS.map(function(q) {
+      var sel = document.querySelector('input[name="' + q.id + '"]:checked');
+      var ans = sel ? sel.value : "";
+      return { id: q.id, correct: ans === q.key };
+    });
+    var earned = tasks.filter(function(t) { return t.passed; }).length +
+      questions.filter(function(q) { return q.correct; }).length;
+    var total = tasks.length + questions.length;
+    $("#overallScore").textContent = earned + " / " + total;
+    $("#progFill").style.width = Math.round((earned / total) * 100) + "%";
+    return { tasks: tasks, questions: questions, earned: earned, total: total };
+  }
+
+  function wire() {
+    $("#accessBody").addEventListener("change", function(e) {
+      var c = e.target.closest(".grant"); if (!c) return;
+      cfg.access[c.dataset.g][c.dataset.d] = c.checked; renderPending();
+    });
+    $("#doorList").addEventListener("change", function(e) {
+      var t = e.target;
+      if (t.id === "d1sched") cfg.doors.D1.schedule = t.value;
+      else if (t.id === "d2interlock") cfg.doors.D2.interlock = t.checked;
+      else if (t.id === "d3factor") cfg.doors.D3.secondFactor = t.value;
+      else if (t.id === "d3alarm") cfg.doors.D3.alarm = t.checked;
+      renderPending();
+    });
+    $("#camAssigned").addEventListener("change", function(e) { cfg.cameras.D2.assigned = e.target.checked; renderPending(); });
+    $("#camRecording").addEventListener("change", function(e) { cfg.cameras.D2.recording = e.target.checked; renderPending(); });
+
+    $("#applyBtn").addEventListener("click", function() {
+      committed = clone(cfg);
+      lastApplied = new Date().toLocaleString();
+      renderPending(); renderTasks(); evalAll();
+    });
+
+    $("#questionList").addEventListener("change", function() { evalAll(); });
+    $("#resetBtn").addEventListener("click", reset);
+  }
+
+  function reset() {
+    cfg = freshState(); committed = clone(cfg); lastApplied = null;
+    document.querySelectorAll('input[type=radio]').forEach(function(r) { r.checked = false; });
+    renderAccess(); renderDoors(); renderPending(); renderTasks(); evalAll();
+  }
+
+  renderAccess(); renderDoors(); renderPending(); renderTasks(); renderQuestions(); wire(); evalAll();
+})();
+</script>
+
+</body>
+</html>
