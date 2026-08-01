@@ -1,0 +1,452 @@
+/* ================================================================
+   AP Cybersecurity — Shift Log / Case File design system
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --ink: #10161d;
+  --panel: #1a222c;
+  --panel-2: #212b37;
+  --paper: #eef1f5;
+  --paper-2: #ffffff;
+  --line: #2c3846;
+  --line-soft: #212b37;
+  --text: #dbe2ea;
+  --text-dim: #8a97a8;
+  --text-on-paper: #1a222c;
+  --text-on-paper-dim: #56606e;
+
+  --cyan: #4fd1c5;
+  --cyan-dim: #1f4d49;
+  --amber: #f2a541;
+  --amber-dim: #4d3a1a;
+  --violet: #a78bfa;
+  --violet-dim: #372f57;
+  --green: #6fcf97;
+  --green-dim: #1f4a34;
+  --red: #e0596a;
+  --red-dim: #4a2530;
+
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+::selection { background: var(--cyan); color: var(--ink); }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.brand .tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink);
+  background: var(--cyan);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.topnav {
+  display: flex;
+  gap: 1.4rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.topnav a { text-decoration: none; }
+.topnav a:hover { color: var(--cyan); }
+
+/* ---------- Layout shells ---------- */
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.hero {
+  padding: 2.2rem 0 2.6rem;
+  border-bottom: 1px dashed var(--line);
+  margin-bottom: 2.4rem;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin: 0 0 0.7rem;
+}
+
+h1.title {
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  line-height: 1.15;
+  margin: 0 0 0.8rem;
+  color: #fff;
+}
+
+.lede {
+  max-width: 62ch;
+  color: var(--text-dim);
+  font-size: 1.02rem;
+  margin: 0;
+}
+
+.stat-row {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.6rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-family: var(--mono);
+}
+.stat .n {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+.stat .l {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Unit blocks (the "filing cabinet") ---------- */
+.unit {
+  margin-bottom: 2.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.unit-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.unit-tab {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.unit-head h2 {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  margin: 0;
+  color: #fff;
+  flex: 1;
+}
+
+.unit-count {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+.topic {
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+.topic:last-child { border-bottom: none; }
+
+.topic-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.topic-head .num { color: var(--text); font-weight: 700; }
+.topic-head .name { color: var(--text); }
+
+.topic.empty .topic-head { opacity: 0.55; }
+.topic.empty::after {
+  content: none;
+}
+.soon {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  padding-left: 0.2rem;
+}
+
+.lab-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.lab-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 7px;
+  text-decoration: none;
+  background: var(--ink);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.lab-card:hover {
+  transform: translateX(3px);
+  border-color: var(--cyan);
+}
+
+.lab-card .lab-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.lab-card .lab-obj {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.lab-card .arrow {
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+/* unit accent color application */
+.u-cyan   { color: var(--cyan);   background: var(--cyan-dim); }
+.u-amber  { color: var(--amber);  background: var(--amber-dim); }
+.u-violet { color: var(--violet); background: var(--violet-dim); }
+.u-green  { color: var(--green);  background: var(--green-dim); }
+.u-red    { color: var(--red);    background: var(--red-dim); }
+
+.unit.cyan   .lab-card { border-left-color: var(--cyan); }
+.unit.amber  .lab-card { border-left-color: var(--amber); }
+.unit.violet .lab-card { border-left-color: var(--violet); }
+.unit.green  .lab-card { border-left-color: var(--green); }
+.unit.red    .lab-card { border-left-color: var(--red); }
+
+footer.site-foot {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+}
+
+/* ================================================================
+   LAB PAGE (case file) shared components
+   ================================================================ */
+
+.case-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  margin-bottom: 0.6rem;
+}
+.case-strip .obj-chip {
+  border: 1px solid var(--line);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.case-brief {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  margin: 1.2rem 0 1.8rem;
+  font-size: 0.94rem;
+  color: var(--text);
+}
+.case-brief b { color: #fff; }
+
+.workspace {
+  background: var(--paper);
+  color: var(--text-on-paper);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid #d4d9e0;
+  box-shadow: 0 20px 50px -25px rgba(0,0,0,0.6);
+}
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  border-top: 1px solid var(--line);
+  margin-top: 1.4rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.progress-track {
+  flex: 1;
+  min-width: 160px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--cyan);
+  width: 0%;
+  transition: width 0.25s ease;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 0.55rem 0.95rem;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn.primary {
+  background: var(--cyan);
+  color: var(--ink);
+  border-color: var(--cyan);
+}
+.btn.primary:hover { color: var(--ink); filter: brightness(1.08); }
+
+.btn.danger:hover { border-color: var(--red); color: var(--red); }
+.btn.safe:hover { border-color: var(--green); color: var(--green); }
+
+.results-panel {
+  display: none;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1.2rem 1.3rem;
+  margin-top: 1rem;
+}
+.results-panel.show { display: block; }
+.results-panel h3 {
+  font-family: var(--display);
+  margin: 0 0 0.8rem;
+  color: #fff;
+  font-size: 1.05rem;
+}
+.results-panel ul {
+  margin: 0.6rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+.results-panel li { margin-bottom: 0.35rem; }
+.score-big {
+  font-family: var(--mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.tag.correct { background: var(--green-dim); color: var(--green); }
+.tag.incorrect { background: var(--red-dim); color: var(--red); }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  margin-bottom: 1.2rem;
+}
+.back-link:hover { color: var(--cyan); }
+
+@media (max-width: 640px) {
+  .topnav { display: none; }
+  .stat-row { gap: 1.2rem; }
+}
