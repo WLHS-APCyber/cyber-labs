@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Triage — Smishing Recognition | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .mail-app { display: grid; grid-template-columns: 280px 1fr; min-height: 480px; }
+  .mail-list { border-right: 1px solid #d4d9e0; background: #e4e8ee; overflow-y: auto; max-height: 620px; }
+  .mail-item { padding: 0.8rem 1rem; border-bottom: 1px solid #d4d9e0; cursor: pointer; position: relative; }
+  .mail-item:hover { background: #d9e0e9; }
+  .mail-item.active { background: #fff; border-left: 3px solid var(--cyan); }
+  .mail-item .mi-from { font-weight: 700; font-size: 0.86rem; }
+  .mail-item .mi-subj { font-size: 0.8rem; color: var(--text-on-paper-dim); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mail-item .mi-badge {
+    position: absolute; top: 0.7rem; right: 0.8rem;
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+    padding: 0.08rem 0.35rem; border-radius: 4px;
+  }
+  .mail-item.sorted.correct .mi-badge { background: var(--green-dim); color: var(--green); }
+  .mail-item.sorted.incorrect .mi-badge { background: var(--red-dim); color: var(--red); }
+
+  .phone-pane { padding: 1.4rem 1.6rem; display: flex; flex-direction: column; min-height: 480px; }
+  .mr-empty { margin: auto; color: var(--text-on-paper-dim); font-family: var(--mono); font-size: 0.85rem; text-align: center; }
+  .thread-head { border-bottom: 1px solid #d4d9e0; padding-bottom: 0.8rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-on-paper-dim); }
+  .thread-head b { color: var(--text-on-paper); }
+  .bubble-wrap { flex: 1; }
+  .bubble {
+    background: #e4e8ee; border-radius: 14px 14px 14px 4px; padding: 0.7rem 0.95rem;
+    max-width: 80%; font-size: 0.92rem; margin-bottom: 0.9rem;
+  }
+  .bubble a.sms-link { color: #1a5fb4; text-decoration: underline; cursor: help; }
+  .inspector {
+    font-family: var(--mono); font-size: 0.78rem; background: var(--ink); color: var(--cyan);
+    padding: 0.6rem 1rem; min-height: 2.2rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .inspector .lbl { color: var(--text-dim); }
+  .mr-actions { display: flex; gap: 0.7rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid #d4d9e0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Shift Log <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 2.2 — Social Engineering</span>
+    <span class="obj-chip">Obj 5.6 — Smishing Recognition</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">Text Triage — Smishing on a Personal Phone</h1>
+  <p class="lede">
+    These are six text threads from a personal phone, not a work account. Read each one,
+    <b>hover any link</b> to check where it really goes, and decide: safe message or a smishing attempt.
+  </p>
+
+  <div class="case-brief">
+    ▲ This isn't a corporate inbox — it's someone's own phone. Real banks and delivery services
+    rarely ask you to click a link to "verify" an account, and a one-time login code should
+    never be requested back from you by text.
+  </div>
+
+  <div class="workspace">
+    <div class="mail-app">
+      <div class="mail-list" id="mailList"></div>
+      <div class="phone-pane" id="phonePane">
+        <p class="mr-empty">Select a text thread from the list to read it.</p>
+      </div>
+    </div>
+    <div class="inspector" id="inspector"><span class="lbl">Link destination:</span> hover a link to inspect it</div>
+  </div>
+
+  <div class="progress-bar">
+    <span id="progressLabel">0 / 6 sorted</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <button class="btn" id="resetBtn">Reset lab</button>
+    <button class="btn primary" id="submitBtn" disabled>Show results</button>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <h3>Shift summary</h3>
+    <p><span class="score-big" id="scoreBig">0 / 6</span> <span style="color:var(--text-dim); font-family:var(--mono); font-size:0.8rem;">correctly triaged</span></p>
+    <ul id="resultsList"></ul>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 2.2 &amp; 5.6. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+const texts = [
+  {
+    id: 1,
+    from: "Willow Dental",
+    number: "(503) 555-0121",
+    subject: "Appointment reminder",
+    body: `Hi! This is a reminder of your cleaning appointment tomorrow at 2:30pm with Dr. Alvarez.
+      Reply C to confirm or call us at (503) 555-0121 to reschedule.`,
+    correct: "safe",
+    why: "No link, no request for personal or financial info, and it gives you an independent phone number to call back if you want to verify."
+  },
+  {
+    id: 2,
+    from: "USPS-Delivery",
+    number: "88274",
+    subject: "Package on hold",
+    body: `USPS: Your package could not be delivered due to unpaid customs fee. Pay $2.99 to release it:
+      <a class="sms-link" href="#" data-real="http://usps-redelivery-fee.info/track829">usps-track.co/829</a>`,
+    correct: "smishing",
+    why: "The visible link text and the real destination don't match, and it's not an official usps.com domain. A tiny 'fee' request is a classic smishing hook to harvest card details."
+  },
+  {
+    id: 3,
+    from: "Cascade Bank",
+    number: "87226",
+    subject: "One-time code",
+    body: `Your Cascade Bank one-time verification code is 482913. Do not share this code with anyone,
+      including bank employees. It expires in 10 minutes.`,
+    correct: "safe",
+    why: "This is a standard automated 2FA message — it delivers a code, it doesn't ask you to send anything back, and it explicitly warns not to share it."
+  },
+  {
+    id: 4,
+    from: "Cascade-Bank-Alert",
+    number: "(415) 555-0199",
+    subject: "Account locked",
+    body: `ALERT: Your Cascade Bank account has been locked due to suspicious activity. Verify your
+      identity immediately to restore access:
+      <a class="sms-link" href="#" data-real="http://cascadebank-secure-verify.com/login">cascadebank.com/verify</a>`,
+    correct: "smishing",
+    why: "Visible link text claims cascadebank.com but the real destination is cascadebank-secure-verify.com, a look-alike domain built to harvest online banking credentials."
+  },
+  {
+    id: 5,
+    from: "Jordan",
+    number: "(971) 555-0177",
+    subject: "This weekend",
+    body: `hey are we still on for the trailhead at 9am saturday? I can grab coffee on the way if you want`,
+    correct: "safe",
+    why: "A normal personal message from a known contact, no links, no requests for information or money."
+  },
+  {
+    id: 6,
+    from: "PrizeAlert",
+    number: "(302) 555-0143",
+    subject: "You've won!",
+    body: `Congratulations! You've been randomly selected to win a $500 gift card. Claim your prize
+      before it expires:
+      <a class="sms-link" href="#" data-real="http://claim-your-reward-now.biz/gc500?id=xk21">giftcard-rewards.com/claim</a>`,
+    correct: "smishing",
+    why: "Unsolicited 'you've won' prize messages with urgency ('before it expires') and a mismatched link destination are a textbook smishing lure — no legitimate sweepstakes works this way."
+  }
+];
+
+let current = null;
+const sorted = {};
+
+const mailList = document.getElementById('mailList');
+const phonePane = document.getElementById('phonePane');
+const inspector = document.getElementById('inspector');
+const progressLabel = document.getElementById('progressLabel');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const resultsPanel = document.getElementById('resultsPanel');
+const resultsList = document.getElementById('resultsList');
+const scoreBig = document.getElementById('scoreBig');
+
+function renderList() {
+  mailList.innerHTML = '';
+  texts.forEach(t => {
+    const item = document.createElement('div');
+    item.className = 'mail-item' + (current === t.id ? ' active' : '') + (sorted[t.id] ? ' sorted' : '');
+    if (sorted[t.id]) item.classList.add(sorted[t.id] === t.correct ? 'correct' : 'incorrect');
+    item.innerHTML = `
+      <div class="mi-from">${t.from}</div>
+      <div class="mi-subj">${t.subject}</div>
+      ${sorted[t.id] ? `<span class="mi-badge">${sorted[t.id] === t.correct ? 'CORRECT' : 'MISSED'}</span>` : ''}
+    `;
+    item.addEventListener('click', () => openText(t.id));
+    mailList.appendChild(item);
+  });
+}
+
+function openText(id) {
+  current = id;
+  const t = texts.find(x => x.id === id);
+  phonePane.innerHTML = `
+    <div class="thread-head"><b>${t.from}</b> &nbsp;·&nbsp; ${t.number}</div>
+    <div class="bubble-wrap"><div class="bubble">${t.body}</div></div>
+    <div class="mr-actions">
+      <button class="btn safe" id="markSafe">Mark Safe</button>
+      <button class="btn danger" id="markSpam">Report Smishing</button>
+    </div>
+  `;
+  phonePane.querySelectorAll('a.sms-link').forEach(a => {
+    a.addEventListener('mouseenter', () => {
+      inspector.innerHTML = `<span class="lbl">Link destination:</span> ${a.dataset.real}`;
+    });
+    a.addEventListener('mouseleave', () => {
+      inspector.innerHTML = `<span class="lbl">Link destination:</span> hover a link to inspect it`;
+    });
+    a.addEventListener('click', evt => evt.preventDefault());
+  });
+  document.getElementById('markSafe').addEventListener('click', () => sortText(id, 'safe'));
+  document.getElementById('markSpam').addEventListener('click', () => sortText(id, 'smishing'));
+  renderList();
+}
+
+function sortText(id, verdict) {
+  sorted[id] = verdict;
+  renderList();
+  openText(id);
+  updateProgress();
+}
+
+function updateProgress() {
+  const count = Object.keys(sorted).length;
+  progressLabel.textContent = `${count} / ${texts.length} sorted`;
+  progressFill.style.width = `${(count / texts.length) * 100}%`;
+  submitBtn.disabled = count < texts.length;
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  current = null;
+  for (const k in sorted) delete sorted[k];
+  updateProgress();
+  resultsPanel.classList.remove('show');
+  phonePane.innerHTML = '<p class="mr-empty">Select a text thread from the list to read it.</p>';
+  renderList();
+});
+
+submitBtn.addEventListener('click', () => {
+  let score = 0;
+  resultsList.innerHTML = '';
+  texts.forEach(t => {
+    const correct = sorted[t.id] === t.correct;
+    if (correct) score++;
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tag ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'Missed'}</span>
+      <b>${t.subject}</b> — actually <b>${t.correct}</b>. ${t.why}`;
+    resultsList.appendChild(li);
+  });
+  scoreBig.textContent = `${score} / ${texts.length}`;
+  resultsPanel.classList.add('show');
+  resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+renderList();
+</script>
+
+</body>
+</html>

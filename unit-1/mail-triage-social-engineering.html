@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mail Triage — Riverstone Outdoor Co. | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .mail-app { display: grid; grid-template-columns: 280px 1fr; min-height: 480px; }
+  .mail-list { border-right: 1px solid #d4d9e0; background: #e4e8ee; overflow-y: auto; max-height: 620px; }
+  .mail-item { padding: 0.8rem 1rem; border-bottom: 1px solid #d4d9e0; cursor: pointer; position: relative; }
+  .mail-item:hover { background: #d9e0e9; }
+  .mail-item.active { background: #fff; border-left: 3px solid var(--cyan); }
+  .mail-item .mi-from { font-weight: 700; font-size: 0.86rem; }
+  .mail-item .mi-subj { font-size: 0.82rem; color: var(--text-on-paper-dim); margin-top: 0.1rem; }
+  .mail-item .mi-badge {
+    position: absolute; top: 0.7rem; right: 0.8rem;
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+    padding: 0.08rem 0.35rem; border-radius: 4px;
+  }
+  .mail-item.sorted.correct .mi-badge { background: var(--green-dim); color: var(--green); }
+  .mail-item.sorted.incorrect .mi-badge { background: var(--red-dim); color: var(--red); }
+  .mail-reader { padding: 1.4rem 1.6rem; display: flex; flex-direction: column; min-height: 480px; }
+  .mr-empty { margin: auto; color: var(--text-on-paper-dim); font-family: var(--mono); font-size: 0.85rem; text-align: center; }
+  .mr-head { border-bottom: 1px solid #d4d9e0; padding-bottom: 0.9rem; margin-bottom: 1rem; }
+  .mr-head .mr-subject { font-family: var(--display); font-size: 1.15rem; font-weight: 700; margin: 0 0 0.4rem; }
+  .mr-head .mr-meta { font-size: 0.82rem; color: var(--text-on-paper-dim); }
+  .mr-body { font-size: 0.94rem; flex: 1; }
+  .mr-body a.mail-link { color: #1a5fb4; text-decoration: underline; cursor: help; }
+  .mr-actions { display: flex; gap: 0.7rem; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid #d4d9e0; }
+  .inspector {
+    font-family: var(--mono); font-size: 0.78rem; background: var(--ink); color: var(--cyan);
+    padding: 0.6rem 1rem; min-height: 2.2rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .inspector .lbl { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Shift Log <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 2.2 — Social Engineering</span>
+    <span class="obj-chip">Obj 5.6 — Phishing Recognition</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">Mail Triage — Riverstone Outdoor Co.</h1>
+  <p class="lede">
+    Work the CFO's flagged inbox. Read each message, decide whether it's genuine or a
+    social-engineering attempt, and sort it. <b>Hover any link</b> to reveal its true destination
+    in the inspector strip at the bottom of the reading pane.
+  </p>
+
+  <div class="case-brief">
+    ▲ You're the IT security analyst at <b>Riverstone Outdoor Co.</b>, an outdoor-gear retailer.
+    The CFO, <b>Marcus Webb</b>, forwarded 7 flagged messages. Riverstone's verified vendors are
+    <b>Cascade Payroll</b> (portal.cascadepayroll.com) and supplier <b>Alderwood Freight</b>
+    (alderwoodfreight.com). The company domain is <b>riverstoneoutdoor.com</b> — watch for look-alikes.
+  </div>
+
+  <div class="workspace">
+    <div class="mail-app">
+      <div class="mail-list" id="mailList"></div>
+      <div class="mail-reader" id="mailReader">
+        <p class="mr-empty">Select a message from the list to read it.</p>
+      </div>
+    </div>
+    <div class="inspector" id="inspector"><span class="lbl">Link destination:</span> hover a link to inspect it</div>
+  </div>
+
+  <div class="progress-bar">
+    <span id="progressLabel">0 / 7 sorted</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <button class="btn" id="resetBtn">Reset lab</button>
+    <button class="btn primary" id="submitBtn" disabled>Show results</button>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <h3>Shift summary</h3>
+    <p><span class="score-big" id="scoreBig">0 / 7</span> <span style="color:var(--text-dim); font-family:var(--mono); font-size:0.8rem;">correctly triaged</span></p>
+    <ul id="resultsList"></ul>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 2.2 &amp; 5.6. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+const emails = [
+  {
+    id: 1,
+    from: "IT Support",
+    fromEmail: "it-support@riverstoneoutdoor.com",
+    subject: "Your password expires in 3 days",
+    body: `Hi Marcus,<br><br>This is an automated reminder that your network password expires in 3 days.
+      Update it any time before then at the internal portal below.<br><br>
+      <a class="mail-link" href="#" data-real="https://portal.riverstoneoutdoor.com/account/password">Update my password</a><br><br>
+      — IT Support`,
+    correct: "genuine",
+    why: "Sender domain and link both match the real company domain, riverstoneoutdoor.com. No urgency pressure, no request for credentials by reply."
+  },
+  {
+    id: 2,
+    from: "Cascade Payroll",
+    fromEmail: "payroll-alerts@cascade-payroll-secure.com",
+    subject: "ACTION REQUIRED: Direct deposit verification failed",
+    body: `Dear Employee,<br><br>Our system was unable to verify your direct deposit details for this pay cycle.
+      Failure to update within 24 hours will delay your payment.<br><br>
+      <a class="mail-link" href="#" data-real="http://cascade-payroll-secure.com/verify?id=8834">Verify my deposit details now</a><br><br>
+      Cascade Payroll Services`,
+    correct: "phishing",
+    why: "Sender domain is cascade-payroll-secure.com, not the verified portal.cascadepayroll.com — a look-alike domain. Classic urgency + payroll pretext used to harvest banking credentials."
+  },
+  {
+    id: 3,
+    from: "Alderwood Freight Billing",
+    fromEmail: "billing@alderwoodfreight.com",
+    subject: "Invoice #AF-22190 now available",
+    body: `Hello,<br><br>Your latest invoice from Alderwood Freight is ready to view in the supplier portal.<br><br>
+      <a class="mail-link" href="#" data-real="https://alderwoodfreight.com/invoices/AF-22190">View invoice AF-22190</a><br><br>
+      Thanks,<br>Alderwood Freight Billing Team`,
+    correct: "genuine",
+    why: "Sender and link both match the verified supplier domain, alderwoodfreight.com. Routine invoice notice with no unusual pressure."
+  },
+  {
+    id: 4,
+    from: "Marcus Webb",
+    fromEmail: "marcus.webb@riverstone-outdoor.net",
+    subject: "Quick favor — need this handled discreetly",
+    body: `Hey, I'm stuck in back-to-back board meetings and can't take calls right now.
+      I need you to pick up $2,000 in gift cards for a vendor appreciation gift and send me the
+      codes by reply email before 3pm. Keep this between us for now, I'll explain later.<br><br>
+      Sent from my iPhone`,
+    correct: "phishing",
+    why: "Sender domain is riverstone-outdoor.net, not riverstoneoutdoor.com. Executive impersonation (BEC) using urgency, secrecy, and an unusual request — gift cards are a classic red flag."
+  },
+  {
+    id: 5,
+    from: "Riverstone IT Helpdesk",
+    fromEmail: "helpdesk@riverstone-outdoor-it.net",
+    subject: "Your mailbox is 98% full",
+    body: `Your mailbox has exceeded its storage quota. Emails may stop sending or receiving within 24 hours.
+      Verify your identity below to expand your storage automatically.<br><br>
+      <a class="mail-link" href="#" data-real="http://riverstone-outdoor-it.net/mailbox-verify">Verify my mailbox</a><br><br>
+      Riverstone IT`,
+    correct: "phishing",
+    why: "Sender domain riverstone-outdoor-it.net is not riverstoneoutdoor.com. Manufactured urgency around storage limits is a common pretext to harvest webmail credentials."
+  },
+  {
+    id: 6,
+    from: "Riverstone HR",
+    fromEmail: "hr@riverstoneoutdoor.com",
+    subject: "Benefits open enrollment closes Friday",
+    body: `Hi Marcus,<br><br>Reminder that open enrollment for 2027 benefits closes this Friday at 5pm.
+      Review your elections in the HR portal any time before then.<br><br>
+      <a class="mail-link" href="#" data-real="https://hr.riverstoneoutdoor.com/enrollment">Review my benefits</a><br><br>
+      — Riverstone HR`,
+    correct: "genuine",
+    why: "Sender and link both match the real company domain. A real deadline with no pressure to click immediately or share credentials."
+  },
+  {
+    id: 7,
+    from: "Parcel Express Delivery",
+    fromEmail: "notify@parcel-express-tracking.com",
+    subject: "Your package is on hold — action needed",
+    body: `We attempted delivery of your package but were unable to complete it. A small redelivery
+      fee is required to release your parcel.<br><br>
+      <a class="mail-link" href="#" data-real="http://parcel-express-tracking.com/pay-fee?ref=RS9931">Pay redelivery fee</a><br><br>
+      Parcel Express`,
+    correct: "phishing",
+    why: "Riverstone has no verified shipping vendor by this name, and there's no company connection to a personal package. Fee-to-release is a classic smishing/phishing pretext."
+  }
+];
+
+let current = null;
+const sorted = {}; // id -> 'genuine' | 'phishing'
+
+const mailList = document.getElementById('mailList');
+const mailReader = document.getElementById('mailReader');
+const inspector = document.getElementById('inspector');
+const progressLabel = document.getElementById('progressLabel');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const resultsPanel = document.getElementById('resultsPanel');
+const resultsList = document.getElementById('resultsList');
+const scoreBig = document.getElementById('scoreBig');
+
+function renderList() {
+  mailList.innerHTML = '';
+  emails.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'mail-item' + (current === e.id ? ' active' : '') + (sorted[e.id] ? ' sorted' : '');
+    if (sorted[e.id]) {
+      item.classList.add(sorted[e.id] === e.correct ? 'correct' : 'incorrect');
+    }
+    item.innerHTML = `
+      <div class="mi-from">${e.from}</div>
+      <div class="mi-subj">${e.subject}</div>
+      ${sorted[e.id] ? `<span class="mi-badge">${sorted[e.id] === e.correct ? 'CORRECT' : 'MISSED'}</span>` : ''}
+    `;
+    item.addEventListener('click', () => openMail(e.id));
+    mailList.appendChild(item);
+  });
+}
+
+function openMail(id) {
+  current = id;
+  const e = emails.find(x => x.id === id);
+  mailReader.innerHTML = `
+    <div class="mr-head">
+      <p class="mr-subject">${e.subject}</p>
+      <p class="mr-meta"><b>${e.from}</b> &lt;${e.fromEmail}&gt;</p>
+    </div>
+    <div class="mr-body">${e.body}</div>
+    <div class="mr-actions">
+      <button class="btn safe" id="markGenuine">Mark Genuine</button>
+      <button class="btn danger" id="markPhishing">Mark Phishing</button>
+    </div>
+  `;
+  mailReader.querySelectorAll('a.mail-link').forEach(a => {
+    a.addEventListener('mouseenter', () => {
+      inspector.innerHTML = `<span class="lbl">Link destination:</span> ${a.dataset.real}`;
+    });
+    a.addEventListener('mouseleave', () => {
+      inspector.innerHTML = `<span class="lbl">Link destination:</span> hover a link to inspect it`;
+    });
+    a.addEventListener('click', evt => evt.preventDefault());
+  });
+  document.getElementById('markGenuine').addEventListener('click', () => sortMail(id, 'genuine'));
+  document.getElementById('markPhishing').addEventListener('click', () => sortMail(id, 'phishing'));
+  renderList();
+}
+
+function sortMail(id, verdict) {
+  sorted[id] = verdict;
+  renderList();
+  openMail(id);
+  updateProgress();
+}
+
+function updateProgress() {
+  const count = Object.keys(sorted).length;
+  progressLabel.textContent = `${count} / ${emails.length} sorted`;
+  progressFill.style.width = `${(count / emails.length) * 100}%`;
+  submitBtn.disabled = count < emails.length;
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  current = null;
+  for (const k in sorted) delete sorted[k];
+  updateProgress();
+  resultsPanel.classList.remove('show');
+  mailReader.innerHTML = '<p class="mr-empty">Select a message from the list to read it.</p>';
+  renderList();
+});
+
+submitBtn.addEventListener('click', () => {
+  let score = 0;
+  resultsList.innerHTML = '';
+  emails.forEach(e => {
+    const correct = sorted[e.id] === e.correct;
+    if (correct) score++;
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tag ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'Missed'}</span>
+      <b>${e.subject}</b> — actually <b>${e.correct}</b>. ${e.why}`;
+    resultsList.appendChild(li);
+  });
+  scoreBig.textContent = `${score} / ${emails.length}`;
+  resultsPanel.classList.add('show');
+  resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+renderList();
+</script>
+
+</body>
+</html>

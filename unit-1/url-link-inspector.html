@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link Inspector — Trusted or Lookalike Domain | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .ref-sheet {
+    background: #fff; border: 1px solid #d4d9e0; border-radius: 8px; padding: 1rem 1.2rem;
+    margin-bottom: 1.4rem; font-size: 0.86rem; color: var(--text-on-paper);
+  }
+  .ref-sheet h4 { margin: 0 0 0.5rem; font-family: var(--display); font-size: 0.95rem; }
+  .ref-sheet code { background: #e4e8ee; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: var(--mono); }
+  .link-grid { display: grid; gap: 0.9rem; padding: 1.4rem; }
+  .link-card {
+    background: #fff; border: 1px solid #d4d9e0; border-radius: 8px; padding: 1rem 1.1rem;
+  }
+  .link-card .lc-context { font-size: 0.8rem; color: var(--text-on-paper-dim); margin-bottom: 0.4rem; }
+  .link-card .lc-visible {
+    font-size: 1rem; color: #1a5fb4; text-decoration: underline; cursor: help; font-weight: 600;
+  }
+  .lc-real {
+    font-family: var(--mono); font-size: 0.78rem; color: var(--text-on-paper-dim);
+    margin-top: 0.4rem; display: none;
+  }
+  .lc-real.show { display: block; }
+  .lc-actions { display: flex; gap: 0.6rem; margin-top: 0.8rem; }
+  .lc-actions .btn { font-size: 0.72rem; padding: 0.4rem 0.7rem; }
+  .link-card.sorted.trusted { border-left: 4px solid var(--green); }
+  .link-card.sorted.suspicious { border-left: 4px solid var(--red); }
+  .link-card .lc-verdict {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700; float: right;
+    padding: 0.15rem 0.4rem; border-radius: 4px;
+  }
+  .link-card.sorted.trusted .lc-verdict { background: var(--green-dim); color: var(--green); }
+  .link-card.sorted.suspicious .lc-verdict { background: var(--red-dim); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Shift Log <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 2.4 — Indicators of Compromise</span>
+    <span class="obj-chip">Obj 5.6 — Phishing Recognition</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">Link Inspector — Trusted or Lookalike Domain?</h1>
+  <p class="lede">
+    Eight links came in this week from emails, texts, and a break-room flyer QR code. The visible
+    text isn't always the real destination. <b>Hover each link</b> to reveal where it actually
+    goes, compare it against the reference sheet, then sort it.
+  </p>
+
+  <div class="ref-sheet">
+    <h4>Verified domains on file for Riverstone Outdoor Co.</h4>
+    Company: <code>riverstoneoutdoor.com</code> &nbsp; HR portal: <code>hr.riverstoneoutdoor.com</code> &nbsp;
+    Payroll: <code>portal.cascadepayroll.com</code> &nbsp; Freight supplier: <code>alderwoodfreight.com</code>
+  </div>
+
+  <div class="workspace">
+    <div class="link-grid" id="linkGrid"></div>
+  </div>
+
+  <div class="progress-bar">
+    <span id="progressLabel">0 / 8 sorted</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <button class="btn" id="resetBtn">Reset lab</button>
+    <button class="btn primary" id="submitBtn" disabled>Show results</button>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <h3>Shift summary</h3>
+    <p><span class="score-big" id="scoreBig">0 / 8</span> <span style="color:var(--text-dim); font-family:var(--mono); font-size:0.8rem;">correctly sorted</span></p>
+    <ul id="resultsList"></ul>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 2.4 &amp; 5.6. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+const links = [
+  { id: 1, context: "From an HR benefits reminder email", visible: "hr.riverstoneoutdoor.com/enrollment", real: "https://hr.riverstoneoutdoor.com/enrollment", correct: "trusted",
+    why: "Matches the verified HR portal domain exactly." },
+  { id: 2, context: "From a text claiming to be Cascade Payroll", visible: "portal.cascadepayroll.com/update", real: "http://cascade-payroll.verify-update.info/update", correct: "suspicious",
+    why: "Visible text mimics the real payroll portal, but the actual destination is a completely different domain (verify-update.info)." },
+  { id: 3, context: "From a supplier invoice email", visible: "alderwoodfreight.com/invoices", real: "https://alderwoodfreight.com/invoices/AF-22190", correct: "trusted",
+    why: "Real destination matches the verified freight supplier domain." },
+  { id: 4, context: "QR code on a break-room 'Wifi upgrade' flyer", visible: "riverstone-guest-wifi.com", real: "http://riverstone-guest-wifi.com/connect", correct: "suspicious",
+    why: "Not one of Riverstone's verified domains — riverstoneoutdoor.com never uses a hyphenated 'riverstone-guest-wifi' variant. Unsolicited flyer QR codes are a known attack vector." },
+  { id: 5, context: "From an internal IT ticket confirmation email", visible: "riverstoneoutdoor.com/it/tickets/4482", real: "https://riverstoneoutdoor.com/it/tickets/4482", correct: "trusted",
+    why: "Matches the verified company domain exactly, including path." },
+  { id: 6, context: "From an email claiming to be Cascade Payroll year-end taxes", visible: "cascadepayroll.com/w2", real: "http://cascadepayroll-w2-docs.net/w2", correct: "suspicious",
+    why: "Visible text drops the real 'portal.' subdomain and the actual link goes to an unrelated .net domain — a common trick around tax season." },
+  { id: 7, context: "From a text about a package from Alderwood Freight", visible: "alderwoodfreight.com/track", real: "http://alderwood-freight-tracking.com/track", correct: "suspicious",
+    why: "Close, but not the same domain — the real supplier domain has no hyphens and no 'tracking' subdomain like this." },
+  { id: 8, context: "From the official company newsletter", visible: "riverstoneoutdoor.com/news/q3-update", real: "https://riverstoneoutdoor.com/news/q3-update", correct: "trusted",
+    why: "Matches the verified company domain exactly." }
+];
+
+const sorted = {};
+const linkGrid = document.getElementById('linkGrid');
+const progressLabel = document.getElementById('progressLabel');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const resultsPanel = document.getElementById('resultsPanel');
+const resultsList = document.getElementById('resultsList');
+const scoreBig = document.getElementById('scoreBig');
+
+function renderGrid() {
+  linkGrid.innerHTML = '';
+  links.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'link-card' + (sorted[l.id] ? ' sorted ' + sorted[l.id] : '');
+    card.innerHTML = `
+      ${sorted[l.id] ? `<span class="lc-verdict">${sorted[l.id] === l.correct ? 'CORRECT' : 'MISSED'}</span>` : ''}
+      <div class="lc-context">${l.context}</div>
+      <a href="#" class="lc-visible" data-id="${l.id}">${l.visible}</a>
+      <div class="lc-real" id="real-${l.id}">Real destination: ${l.real}</div>
+      <div class="lc-actions">
+        <button class="btn safe" data-id="${l.id}" data-verdict="trusted">Mark Trusted</button>
+        <button class="btn danger" data-id="${l.id}" data-verdict="suspicious">Mark Suspicious</button>
+      </div>
+    `;
+    linkGrid.appendChild(card);
+  });
+
+  linkGrid.querySelectorAll('a.lc-visible').forEach(a => {
+    a.addEventListener('click', e => e.preventDefault());
+    a.addEventListener('mouseenter', () => document.getElementById('real-' + a.dataset.id).classList.add('show'));
+  });
+  linkGrid.querySelectorAll('button[data-verdict]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sorted[btn.dataset.id] = btn.dataset.verdict;
+      document.getElementById('real-' + btn.dataset.id).classList.add('show');
+      renderGrid();
+      updateProgress();
+    });
+  });
+}
+
+function updateProgress() {
+  const count = Object.keys(sorted).length;
+  progressLabel.textContent = `${count} / ${links.length} sorted`;
+  progressFill.style.width = `${(count / links.length) * 100}%`;
+  submitBtn.disabled = count < links.length;
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  for (const k in sorted) delete sorted[k];
+  updateProgress();
+  resultsPanel.classList.remove('show');
+  renderGrid();
+});
+
+submitBtn.addEventListener('click', () => {
+  let score = 0;
+  resultsList.innerHTML = '';
+  links.forEach(l => {
+    const correct = sorted[l.id] === l.correct;
+    if (correct) score++;
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tag ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'Missed'}</span>
+      <b>${l.visible}</b> — actually <b>${l.correct}</b>. ${l.why}`;
+    resultsList.appendChild(li);
+  });
+  scoreBig.textContent = `${score} / ${links.length}`;
+  resultsPanel.classList.add('show');
+  resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+renderGrid();
+</script>
+
+</body>
+</html>

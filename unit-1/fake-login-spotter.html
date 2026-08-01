@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login Portal Compare — Real vs. Cloned Page | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .browser-mock {
+    background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #d4d9e0;
+    max-width: 560px; margin: 0 auto;
+  }
+  .browser-chrome {
+    background: #dde2e8; padding: 0.5rem 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    border-bottom: 1px solid #c7ced7; position: relative;
+  }
+  .browser-dots { display: flex; gap: 5px; }
+  .browser-dots span { width: 9px; height: 9px; border-radius: 50%; background: #b7bfc9; display: inline-block; }
+  .address-bar {
+    flex: 1; background: #fff; border-radius: 5px; padding: 0.35rem 0.6rem; font-family: var(--mono);
+    font-size: 0.78rem; color: #444; border: 1px solid #c7ced7;
+  }
+  .page-body { padding: 2rem 1.8rem; position: relative; }
+  .banner {
+    background: #fff3cd; color: #7a5c00; font-family: var(--mono); font-size: 0.78rem;
+    padding: 0.5rem 0.8rem; border-radius: 5px; margin-bottom: 1.2rem; position: relative;
+  }
+  .logo-row { text-align: center; margin-bottom: 1.4rem; position: relative; }
+  .logo-row .logo-text {
+    font-family: var(--display); font-weight: 700; font-size: 1.3rem; color: #2b3542;
+    display: inline-block; position: relative;
+  }
+  .field { margin-bottom: 0.9rem; position: relative; }
+  .field label { display: block; font-size: 0.8rem; color: #56606e; margin-bottom: 0.3rem; }
+  .field input {
+    width: 100%; padding: 0.5rem 0.7rem; border: 1px solid #ccd3da; border-radius: 5px; font-size: 0.88rem;
+    background: #fbfbfc; color: #333;
+  }
+  .remember-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #56606e; margin-bottom: 1rem; position: relative; }
+  .login-btn-mock {
+    width: 100%; padding: 0.6rem; background: #2b3542; color: #fff; border: none; border-radius: 5px;
+    font-weight: 600; font-size: 0.9rem;
+  }
+  .foot-note { text-align: center; font-size: 0.72rem; color: #8a97a8; margin-top: 1.2rem; position: relative; }
+  .forgot-link { text-align: center; font-size: 0.8rem; color: #1a5fb4; margin-top: 0.8rem; position: relative; }
+
+  .hotspot {
+    cursor: pointer; border: 2px dashed transparent; border-radius: 4px;
+  }
+  .hotspot:hover { border-color: var(--amber); }
+  .hotspot.flagged { border-color: var(--red); background: rgba(224,89,106,0.08); }
+  .hotspot.flagged.trap { border-color: var(--amber); background: rgba(242,165,65,0.1); }
+
+  .found-panel {
+    max-width: 560px; margin: 1rem auto 0; font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Shift Log <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 2.4 — Indicators of Compromise</span>
+    <span class="obj-chip">Obj 4.5 — Secure Access</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">Login Portal Compare — Real vs. Cloned Page</h1>
+  <p class="lede">
+    A coworker clicked a link and landed on this login page, thinking it was the Riverstone
+    employee portal. Something's off. <b>Click directly on anything on the page</b> that looks
+    like a red flag. Not everything unusual is actually a problem — think before you flag.
+  </p>
+
+  <div class="case-brief">
+    ▲ The real employee portal lives at <b>portal.riverstoneoutdoor.com</b>, always loads over
+    HTTPS, and only ever asks for a username and password.
+  </div>
+
+  <div class="workspace" style="padding: 2rem 1rem;">
+    <div class="browser-mock">
+      <div class="browser-chrome">
+        <div class="browser-dots"><span></span><span></span><span></span></div>
+        <div class="address-bar hotspot" data-id="url">http://riverstoneoutdoor-login.net/portal</div>
+      </div>
+      <div class="page-body">
+        <div class="banner hotspot" data-id="banner">⚠ Your session expires in 00:59 — log in immediately to avoid account lockout.</div>
+        <div class="logo-row">
+          <span class="logo-text hotspot" data-id="logo">Riverstoune Outdoor — Employee Portal</span>
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" disabled placeholder="j.smith">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" disabled placeholder="••••••••">
+        </div>
+        <div class="field hotspot" data-id="ssn">
+          <label>Social Security Number (required for identity verification)</label>
+          <input type="text" disabled placeholder="XXX-XX-XXXX">
+        </div>
+        <div class="remember-row hotspot" data-id="remember">
+          <input type="checkbox" disabled> Remember me on this device
+        </div>
+        <button class="login-btn-mock">Log In</button>
+        <div class="forgot-link hotspot" data-id="forgot">Forgot your password?</div>
+        <div class="foot-note hotspot" data-id="footer">Copyright Riverstone Outdoor Co, all right reserved 2027.</div>
+      </div>
+    </div>
+    <p class="found-panel" id="foundPanel">0 elements flagged</p>
+  </div>
+
+  <div class="progress-bar">
+    <span style="font-family:var(--mono); font-size:0.8rem; color:var(--text-dim);">Flag every red flag you can find, then submit.</span>
+    <button class="btn" id="resetBtn">Reset lab</button>
+    <button class="btn primary" id="submitBtn">Show results</button>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <h3>Shift summary</h3>
+    <p><span class="score-big" id="scoreBig">0 / 6</span> <span style="color:var(--text-dim); font-family:var(--mono); font-size:0.8rem;">real red flags found</span></p>
+    <ul id="resultsList"></ul>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 2.4 &amp; 4.5. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+const spots = {
+  url:      { real: true,  label: "Address bar", why: "No HTTPS, and the domain is riverstoneoutdoor-login.net — not the real portal.riverstoneoutdoor.com." },
+  banner:   { real: true,  label: "Countdown banner", why: "A fake urgency timer pressuring you to log in immediately is a classic manipulation tactic, not a real session feature." },
+  logo:     { real: true,  label: "Company name", why: "Misspelled as 'Riverstoune' — a subtle typo clone pages often use to look legitimate at a glance." },
+  ssn:      { real: true,  label: "SSN field", why: "The real portal only ever asks for a username and password — never a Social Security Number to log in." },
+  remember: { real: false, label: "Remember me checkbox", why: "This is a completely normal, standard login feature — not a red flag by itself." },
+  forgot:   { real: false, label: "Forgot password link", why: "A standard, expected link on any real login page — not suspicious on its own." },
+  footer:   { real: true,  label: "Footer copyright line", why: "Awkward grammar ('all right reserved') is a small but real tell of a hastily cloned page." }
+};
+
+const flagged = {};
+const foundPanel = document.getElementById('foundPanel');
+const resultsPanel = document.getElementById('resultsPanel');
+const resultsList = document.getElementById('resultsList');
+const scoreBig = document.getElementById('scoreBig');
+
+document.querySelectorAll('.hotspot').forEach(el => {
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    const id = el.dataset.id;
+    flagged[id] = !flagged[id];
+    el.classList.toggle('flagged', flagged[id]);
+    if (flagged[id] && !spots[id].real) el.classList.add('trap'); else el.classList.remove('trap');
+    updateFound();
+  });
+});
+
+function updateFound() {
+  const count = Object.values(flagged).filter(Boolean).length;
+  foundPanel.textContent = `${count} element${count === 1 ? '' : 's'} flagged`;
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  for (const k in flagged) delete flagged[k];
+  document.querySelectorAll('.hotspot').forEach(el => el.classList.remove('flagged', 'trap'));
+  updateFound();
+  resultsPanel.classList.remove('show');
+});
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const trueTotal = Object.values(spots).filter(s => s.real).length;
+  let trueFound = 0, falsePositives = 0;
+  resultsList.innerHTML = '';
+  Object.entries(spots).forEach(([id, s]) => {
+    const wasFlagged = !!flagged[id];
+    if (s.real && wasFlagged) trueFound++;
+    if (!s.real && wasFlagged) falsePositives++;
+    const correct = (s.real && wasFlagged) || (!s.real && !wasFlagged);
+    const li = document.createElement('li');
+    let tagLabel = s.real ? (wasFlagged ? 'Found' : 'Missed') : (wasFlagged ? 'False alarm' : 'Correctly ignored');
+    li.innerHTML = `<span class="tag ${correct ? 'correct' : 'incorrect'}">${tagLabel}</span> <b>${s.label}</b> — ${s.why}`;
+    resultsList.appendChild(li);
+  });
+  scoreBig.textContent = `${trueFound} / ${trueTotal}`;
+  const note = document.createElement('p');
+  note.style.marginTop = '0.6rem';
+  note.style.color = 'var(--text-dim)';
+  note.style.fontSize = '0.82rem';
+  note.textContent = falsePositives > 0
+    ? `You also flagged ${falsePositives} normal element${falsePositives === 1 ? '' : 's'} that weren't actually red flags — worth a second look next time.`
+    : `You didn't flag any normal elements as suspicious — good discernment.`;
+  resultsList.appendChild(note);
+  resultsPanel.classList.add('show');
+  resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+</script>
+
+</body>
+</html>
