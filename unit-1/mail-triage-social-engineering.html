@@ -154,10 +154,9 @@
 const CONFIG = {
   assignmentId: "mail-triage-social-engineering",
   objectives: ["2.2", "5.6"],
-  // Paste your deployed Apps Script web app /exec URL here (see the companion Code.gs):
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwFktFADXjf2UvoaAbg3aiFoCg1lwYLnQcAkX8J4jDQL-P43wLF0-7d6CpZ6f0HxVCsyA/exec",
-  // Must match the SUBMISSION_TOKEN script property in that Apps Script project:
-  submissionToken: "submission-123"
+  // Public submission proxy (Cloudflare Worker) — it holds the real Apps
+  // Script URL and shared token as server-side secrets, never exposed here.
+  SUBMIT_URL: "https://cyber-labs-submit-proxy.wlhs-apcyber.workers.dev"
 };
 
 const TASKS = [
@@ -495,13 +494,10 @@ function receiptPNG() {
 function taskResults() {
   return TASKS.map(t => ({ id: t.id, label: t.label, passed: !!t.pass() }));
 }
-function questionResults() {
-  return emails.map(e => ({
-    id: e.id,
-    prompt: e.subject,
-    answer: sorted[e.id] ? OPTIONS.find(o => o.v === sorted[e.id]).title : "(no answer)",
-    correct: sorted[e.id] === e.correct
-  }));
+function selectionResults() {
+  // Raw picks only — no correct/incorrect flag. The server holds the answer
+  // key and grades these; the client no longer gets to declare its own score.
+  return emails.map(e => ({ id: e.id, selected: sorted[e.id] || null }));
 }
 function setSendStatus(msg, cls) {
   const el = document.getElementById('sendStatus');
@@ -522,8 +518,8 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
     setSendStatus('You still have ' + unsorted + ' message' + (unsorted > 1 ? 's' : '') + ' with no classification. Classify every message, then submit.', 'bad');
     return;
   }
-  if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.startsWith('PASTE_')) {
-    setSendStatus('This lab isn\u2019t wired to a submission endpoint yet. Ask your instructor to set APPS_SCRIPT_URL.', 'bad');
+  if (!CONFIG.SUBMIT_URL || CONFIG.SUBMIT_URL.startsWith('PASTE_')) {
+    setSendStatus('This lab isn\u2019t wired to a submission endpoint yet. Ask your instructor to set SUBMIT_URL.', 'bad');
     return;
   }
 
@@ -532,9 +528,7 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
   setSendStatus('Capturing your work and submitting…', 'work');
 
   const tasks = taskResults();
-  const questions = questionResults();
-  const earned = tasks.filter(t => t.passed).length + questions.filter(q => q.correct).length;
-  const total = tasks.length + questions.length;
+  const selections = selectionResults();
 
   let screenshot;
   try { screenshot = await capturePNG(document.querySelector('.workspace')); }
@@ -546,25 +540,24 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
     clientTimestamp: new Date().toISOString(),
     objectives: CONFIG.objectives,
     tasks: tasks,
-    questions: questions,
-    score: { earned: earned, total: total },
-    screenshot: screenshot,
-    submissionToken: CONFIG.submissionToken
+    selections: selections,
+    screenshot: screenshot
   };
 
   try {
-    const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const res = await fetch(CONFIG.SUBMIT_URL, { method: 'POST', body: JSON.stringify(payload) });
     const out = await res.json();
     if (out && out.success) {
       const link = out.docUrl ? ' <a href="' + out.docUrl + '" target="_blank" rel="noopener">View submission record ↗</a>' : '';
-      setSendStatus('Submitted — ' + earned + ' / ' + total + ' recorded for ' + hackerName + '.' + link, 'good');
+      const scoreText = out.score ? (out.score.earned + ' / ' + out.score.total) : '(graded server-side)';
+      setSendStatus('Submitted — ' + scoreText + ' recorded for ' + hackerName + '.' + link, 'good');
     } else {
       setSendStatus('The server rejected the submission' + (out && out.error ? ': ' + out.error : '.') + ' Tell your instructor and try again.', 'bad');
       sendBtn.disabled = false;
     }
   } catch (err) {
     try {
-      await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+      await fetch(CONFIG.SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
       setSendStatus('Submitted, but this browser blocked the confirmation reply. Confirm receipt with your instructor.', 'work');
     } catch (err2) {
       setSendStatus('Couldn\u2019t reach the submission server. Check your connection and try again.', 'bad');

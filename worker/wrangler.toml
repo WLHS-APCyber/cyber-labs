@@ -1,0 +1,13 @@
+name = "cyber-labs-submit-proxy"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[vars]
+# Not secret — just locks down which site is allowed to call this Worker.
+# Set to "*" while testing locally, then to your real GitHub Pages origin
+# (e.g. "https://wlhs-apcyber.github.io") before going live.
+ALLOWED_ORIGIN = "https://wlhs-apcyber.github.io"
+
+# Real secrets (APPS_SCRIPT_URL, SUBMISSION_TOKEN) are NOT set here.
+# They're pushed with `wrangler secret put` and only ever exist encrypted
+# on Cloudflare's side — never in this repo, never in the deployed source.
