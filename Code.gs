@@ -52,6 +52,80 @@ var ANSWER_KEYS = {
       5: 'genuine',
       6: 'vishing'
     }
+  },
+  'smishing-text-triage': {
+    questions: {
+      1: 'safe',
+      2: 'smishing',
+      3: 'safe',
+      4: 'smishing',
+      5: 'safe',
+      6: 'smishing'
+    }
+  },
+  'url-link-inspector': {
+    questions: {
+      1: 'trusted',
+      2: 'suspicious',
+      3: 'trusted',
+      4: 'suspicious',
+      5: 'trusted',
+      6: 'suspicious',
+      7: 'suspicious',
+      8: 'trusted'
+    }
+  },
+  'fake-login-spotter': {
+    questions: {
+      url: 'flagged',
+      banner: 'flagged',
+      logo: 'flagged',
+      ssn: 'flagged',
+      remember: 'unflagged',
+      forgot: 'unflagged',
+      footer: 'flagged'
+    }
+  },
+  'mail-safety-center': {
+    questions: {
+      level: 'safelist',
+      report: true,
+      attach: true,
+      q1: 'b',
+      q2: 'b',
+      q3: 'b'
+    }
+  },
+  'site-survey-physical-security': {
+    questions: {
+      'cam-door': 'ipcam',
+      'cam-interior': 'ipcam',
+      'reader-door': 'smartreader',
+      'sign-door': 'sign',
+      'desk': 'register',
+      q1: 'a',
+      q2: 'a',
+      q3: 'a',
+      q4: 'a'
+    }
+  },
+  'research-wing-access-controls': {
+    // Compound tasks (multiple fields ANDed together) are pre-combined by
+    // the client into a single JSON-stringified value before it's sent, so
+    // they still fit the plain "selected === correctAnswer" model here.
+    questions: {
+      'staff-access': '[true,true]',
+      'visitor-deny': false,
+      'interlock': true,
+      'mfa': 'badge_pin',
+      'alarm': true,
+      'schedule': 'business',
+      'camera': '[true,true]',
+      q1: 'b',
+      q2: 'c',
+      q3: 'b',
+      q4: 'b'
+    }
   }
 };
 
@@ -125,13 +199,15 @@ function gradeSubmission(data) {
 
   var questionIds = Object.keys(key.questions);
   var questionResults = questionIds.map(function (id) {
-    var chosen = selectedById[id] || null;
+    // hasOwnProperty, not `|| null` — a genuine `false`/`0` answer (e.g. a
+    // toggle a lab expects OFF) must not collapse into "no answer given".
+    var chosen = selectedById.hasOwnProperty(id) ? selectedById[id] : null;
     var correctAnswer = key.questions[id];
     return { id: id, selected: chosen, correct: chosen === correctAnswer };
   });
   var questionsEarned = questionResults.filter(function (q) { return q.correct; }).length;
   var allCorrect = questionsEarned === questionIds.length;
-  var allClassified = questionIds.every(function (id) { return !!selectedById[id]; });
+  var allClassified = questionIds.every(function (id) { return selectedById.hasOwnProperty(id) && selectedById[id] !== null; });
 
   // "classified-all" and "all-correct" are fully derivable from the answer
   // key and the selections we just graded, so recompute them rather than
