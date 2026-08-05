@@ -126,6 +126,22 @@ var ANSWER_KEYS = {
       q3: 'b',
       q4: 'b'
     }
+  },
+  'store-walkthrough-physical-security': {
+    // Every hotspot (real + trap) is a flag-state check; every real one also
+    // has a companion "<id>-fix" entry for the fix the student picked.
+    questions: {
+      'cam-register': 'flagged', 'cam-register-fix': 'add-cam',
+      'eas-gate': 'unflagged',
+      'propped-door': 'flagged', 'propped-door-fix': 'auto-latch',
+      'keyed-lock': 'flagged', 'keyed-lock-fix': 'add-reader',
+      'no-lighting': 'flagged', 'no-lighting-fix': 'motion-light',
+      'no-alarm-sensor': 'flagged', 'no-alarm-sensor-fix': 'door-sensor',
+      'paper-trap': 'unflagged',
+      'window': 'flagged', 'window-fix': 'bars',
+      'sticky-note': 'flagged', 'sticky-note-fix': 'remove-note',
+      'locker-trap': 'unflagged'
+    }
   }
 };
 
