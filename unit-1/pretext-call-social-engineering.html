@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Pretext Call — Riverstone Outdoor Co. | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .call-shell { max-width: 640px; margin: 0 auto; padding: 1.3rem; }
+  .call-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
+    background: var(--paper-bg); border: 1px solid var(--paper-dark); border-bottom: none;
+    padding: 0.7rem 1rem; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-soft);
+  }
+  .call-head b { color: var(--ink); font-family: var(--display); font-weight: 400; font-size: 0.95rem; }
+  .call-head .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-right: 0.4rem; }
+  .susp-meter { display: flex; align-items: center; gap: 0.5rem; }
+  .susp-segs { display: flex; gap: 3px; }
+  .susp-seg { width: 14px; height: 8px; background: var(--paper-card); border: 1px solid var(--paper-dark); }
+  .susp-seg.on { background: var(--brick); border-color: var(--brick); }
+
+  .transcript { background: var(--paper-card); border: 1px solid var(--paper-dark); border-top: none; padding: 1.1rem; min-height: 120px; }
+  .bubble-npc, .bubble-you { border-radius: 12px; padding: 0.65rem 0.9rem; max-width: 88%; font-size: 0.9rem; margin-bottom: 0.7rem; }
+  .bubble-npc { background: #e4d9b8; border-radius: 12px 12px 12px 4px; }
+  .bubble-you { background: var(--teal-wash); border-radius: 12px 12px 4px 12px; margin-left: auto; color: var(--ink); }
+  .bubble-who { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 0.25rem; }
+  .feedback-note { font-size: 0.8rem; color: var(--ink-soft); background: #fff; border: 1px dashed var(--line); border-radius: 8px; padding: 0.6rem 0.8rem; margin: -0.3rem 0 0.9rem; }
+  .feedback-note.wrong { border-color: var(--brick); color: var(--brick); }
+  .feedback-note.right { border-color: var(--teal); color: #1f5850; }
+
+  .action-area { margin-top: 0.9rem; }
+  .opt-list { display: grid; gap: 0.55rem; }
+  .opt-btn {
+    display: block; width: 100%; text-align: left; background: #fff; border: 1px solid var(--paper-dark);
+    border-radius: 8px; padding: 0.65rem 0.85rem; font: inherit; font-size: 0.86rem; color: var(--ink);
+    cursor: pointer;
+  }
+  .opt-btn:hover { border-color: var(--ochre); }
+  .opt-btn:disabled { cursor: default; opacity: 0.5; }
+
+  .ending-block { background: #fff; border: 1px solid var(--paper-dark); border-radius: 8px; padding: 1rem 1.1rem; margin-top: 0.5rem; }
+  .ending-block h3 { margin: 0 0 0.5rem; font-family: var(--display); font-weight: 400; font-size: 1.05rem; }
+  .ending-block ul { margin: 0.6rem 0 0; padding-left: 1.2rem; font-size: 0.86rem; color: var(--ink-soft); }
+  .ending-block li { margin-bottom: 0.4rem; }
+
+  .q { border: 1px solid var(--paper-dark); padding: 0.8rem 0.9rem; margin-bottom: 0.7rem; background: var(--paper-card); border-radius: 8px; }
+  .q .prompt { font-weight: 600; font-size: 0.86rem; margin-bottom: 0.55rem; }
+  .q .qnum { font-family: var(--mono); color: var(--ochre); font-size: 0.7rem; margin-right: 0.4rem; }
+  .qopt { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.4rem 0.5rem; cursor: pointer; border: 1px solid transparent; font-size: 0.8rem; border-radius: 6px; }
+  .qopt:hover { background: var(--paper-bg); }
+  .qopt input { margin-top: 0.2rem; }
+
+  .submit-panel { background: var(--paper-bg); border: 1px solid var(--paper-dark); border-top: 3px solid var(--ink); padding: 1.1rem 1.3rem; margin-top: 1rem; }
+  .submit-panel h3 { font-family: var(--display); font-weight: 400; margin: 0 0 0.3rem; font-size: 1.05rem; }
+  .submit-panel .sp-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 0.9rem; }
+  .submit-row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+  .submit-field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 220px; }
+  .submit-field label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .submit-field input { font: inherit; font-size: 0.88rem; padding: 0.5rem 0.65rem; border: 1px solid var(--paper-dark); background: #fff; color: var(--ink); }
+  .submit-status { font-size: 0.82rem; margin-top: 0.7rem; min-height: 1.2em; }
+  .submit-status.good { color: var(--teal); }
+  .submit-status.bad { color: var(--brick); }
+  .submit-status.work { color: var(--ochre); }
+  .submit-status a { color: var(--teal); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Case Files <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 2.2 — Social Engineering</span>
+    <span class="obj-chip">Obj 5.6 — Security Awareness</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">The Pretext Call — Play the Social Engineer</h1>
+  <p class="lede">
+    Riverstone's security team runs authorized social-engineering tests to find gaps before a real
+    attacker does. You're playing the tester: call the IT Helpdesk posing as a locked-out employee,
+    and see how far persuasion alone gets you. Pick a line at each turn — there's no "safe" choice
+    to hide behind, only more and less convincing ones.
+  </p>
+
+  <div class="case-brief">
+    ▲ <b>Scenario:</b> You're impersonating an employee locked out of their account right before a
+    shift. Your goal: get IT Helpdesk to reset your password or send you a new one — without going
+    through proper verification. Everything you say is a tactic. Choose carefully.
+  </div>
+
+  <div class="workspace">
+    <div class="call-shell">
+      <div class="call-head">
+        <span><span class="dot" id="callDot"></span><b id="callStatus">Connected — IT Helpdesk</b></span>
+        <span class="susp-meter">Suspicion <span class="susp-segs" id="suspSegs"></span></span>
+      </div>
+      <div class="transcript" id="transcript"></div>
+      <div class="action-area" id="actionArea"></div>
+    </div>
+  </div>
+
+  <div class="submit-panel">
+    <h3>Submit to instructor</h3>
+    <p class="sp-note">
+      Enter a pseudonym (no real names) and submit once the call has ended and you've answered the
+      debrief questions. This sends your choices, answers, and a snapshot of your work to your
+      instructor — it does not use your name or any other personal info.
+    </p>
+    <div class="submit-row">
+      <div class="submit-field">
+        <label for="hackerName">Hacker name (pseudonym)</label>
+        <input id="hackerName" type="text" maxlength="40" autocomplete="off" placeholder="e.g. trailhawk_07">
+      </div>
+      <button class="btn primary" id="sendBtn" type="button">Submit completed lab</button>
+    </div>
+    <p class="submit-status" id="sendStatus" role="status" aria-live="polite"></p>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 2.2 &amp; 5.6. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+(function() {
+  "use strict";
+
+  var CONFIG = {
+    assignmentId: "pretext-call-social-engineering",
+    objectives: ["2.2", "5.6"],
+    // Public submission proxy (Cloudflare Worker) — it holds the real Apps
+    // Script URL and shared token as server-side secrets, never exposed here.
+    SUBMIT_URL: "https://cyber-labs-submit-proxy.wlhs-apcyber.workers.dev"
+  };
+
+  var $ = function(s, r) { return (r || document).querySelector(s); };
+  var $$ = function(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  var TURNS = [
+    {
+      id: "turn1",
+      npc: "IT Helpdesk, this is Jordan — how can I help?",
+      options: [
+        { v: "a", t: "I need this fixed right now — my shift starts in ten minutes and I can't log in!" },
+        { v: "b", t: "Hey Jordan, hope your day's going okay — I'm having a rough one though, my login's not working." },
+        { v: "c", t: "This is Jamie from Receiving. I need my account unlocked." },
+        { v: "d", t: "So this started when my laptop updated last night, and then my VPN dropped, and now I think my password's wrong but it might be the account itself, I'm not totally sure—" }
+      ],
+      correct: "b",
+      why: {
+        a: "Urgency right out of the gate is one of the first things helpdesk staff are trained to notice — it reads as pressure, not need.",
+        b: "Leading with rapport lowers the agent's guard before you ask for anything. It's one of the most consistently effective openers in real pretexting attempts, because it doesn't trigger any of the reflexes a demand or a rushed story does.",
+        c: "A flat, businesslike demand with no rapport-building gives Jordan nothing to work with except your literal claim — exactly what gets checked.",
+        d: "Volunteering a long, unprompted, overly-detailed story is a classic pretexting tell. Real callers with a simple problem don't usually explain this much unprompted."
+      },
+      npcReact: { right: "\"Oh no, that's annoying. Let's get you sorted.\"", wrong: "\"Okay... let me pull up your account.\"" }
+    },
+    {
+      id: "turn2",
+      npc: "Sure — can you give me your employee ID so I can pull up your account?",
+      options: [
+        { v: "a", t: "Yeah, it's 44192." },
+        { v: "b", t: "I don't have it memorized, but you should be able to pull me up by name — Jamie, Receiving." },
+        { v: "c", t: "Why do you need that? Can't you just look at my name and fix it?" },
+        { v: "d", t: "Actually, why don't I just give you a number to call me back on?" }
+      ],
+      correct: "b",
+      why: {
+        a: "A made-up ID is one wrong digit away from an instant mismatch the moment Jordan actually looks it up.",
+        b: "Deflecting to a name lookup avoids handing over a specific, checkable fake number while still sounding cooperative — the lower-risk move.",
+        c: "Pushing back on a completely normal, low-stakes verification question makes you memorable in the wrong way.",
+        d: "Offering your own callback number is backwards — a real employee's number is already on file. Volunteering one is actually a bigger tell to a well-trained agent, even though it sounds helpful."
+      },
+      npcReact: { right: "\"Got it, found you. One sec.\"", wrong: "\"...Alright, let me see what I can find.\"" }
+    },
+    {
+      id: "turn3",
+      npc: "Okay, I see the account — a reset like this actually needs manager sign-off first.",
+      options: [
+        { v: "a", t: "Oh, my manager already said it's fine, just go ahead." },
+        { v: "b", t: "I really don't have time for that, my shift already started!" },
+        { v: "c", t: "That's fine — go ahead and have them call in whenever's convenient, I'll wait." },
+        { v: "d", t: "Can I talk to your supervisor? This is taking way too long." }
+      ],
+      correct: "c",
+      why: {
+        a: "Namedropping a manager's approval is a strong move, but it's also the easiest one to disprove with a single phone call.",
+        b: "More urgency here reads as more pressure on a policy Jordan just cited — that tends to harden resistance, not lower it.",
+        c: "Sounding agreeable and low-pressure is more disarming than it looks. It signals you have nothing to hide and removes the urgency Jordan might otherwise use as a reason to slow down and verify.",
+        d: "Escalating to a supervisor over routine policy raises your visibility right when you want the opposite."
+      },
+      npcReact: { right: "\"Appreciate you being cool about it. Let me just finish up here.\"", wrong: "\"...Let me see what I can do.\"" }
+    },
+    {
+      id: "turn4",
+      npc: "Let me just note down what's happening for the ticket — what exactly is the issue?",
+      options: [
+        { v: "a", t: "It's just not accepting my password — keeps saying it's invalid." },
+        { v: "b", t: "It's throwing a weird auth token mismatch on the SSO handshake, looks like a cert issue." },
+        { v: "c", t: "Does it really matter? Can we just get it sorted?" },
+        { v: "d", t: "I already tried resetting it myself twice and it's still not working." }
+      ],
+      correct: "a",
+      why: {
+        a: "A vague, extremely common complaint is hard to disprove and doesn't invite follow-up questions — the least risky answer that still sounds completely normal.",
+        b: "Dropping precise technical jargon is a common pretexting mistake. It sounds convincing to you, but it's exactly the kind of detail a real IT person can spot as slightly off, or ask a follow-up question you can't answer.",
+        c: "Deflecting a simple documentation question makes you look evasive right when Jordan is just trying to be thorough.",
+        d: "Not a bad answer, but it invites a natural follow-up (\"what happened when you tried?\") that the vaguer option avoids entirely."
+      },
+      npcReact: { right: "\"Yeah, that happens sometimes. Okay, one more thing.\"", wrong: "\"Huh, okay. One more thing.\"" }
+    },
+    {
+      id: "turn5",
+      npc: "Alright, I can reset this for you — how do you want the new temporary password sent?",
+      options: [
+        { v: "a", t: "Can you just read it to me now over the phone?" },
+        { v: "b", t: "Can you text it to me at this number instead — my email's acting up too." },
+        { v: "c", t: "Actually, can you just unlock the account without a new password? I'll sort login out later." },
+        { v: "d", t: "Whatever's fastest — I really need to get on shift." }
+      ],
+      correct: "b",
+      why: {
+        a: "Asking to hear it read aloud works sometimes, but it's a very recognizable request — and it needs someone to actually say a real credential out loud, which is exactly what training tells people to refuse.",
+        b: "Redirecting delivery to a channel you control — one that isn't the number or email already on file — is the most dangerous, most realistic move here, and the one real attacks actually use. It avoids saying anything sensitive out loud and gives you a durable way back in.",
+        c: "Skipping the password step is unusual enough to draw a second look — most legitimate resets don't skip this.",
+        d: "This doesn't actually steer toward the channel that matters — it just adds pressure without changing the outcome."
+      },
+      npcReact: { right: "\"Sure thing, sending that now.\"", wrong: "\"Okay, sending that now.\"" }
+    }
+  ];
+
+  var QUIZ = [
+    {
+      id: "q1",
+      prompt: "What single control would have prevented this reset from happening over a live call at all?",
+      options: [
+        { v: "a", t: "Requiring the reset be verified through an outbound callback to the number already on file" },
+        { v: "b", t: "Requiring the caller to know their own employee ID" },
+        { v: "c", t: "Asking the caller more follow-up questions" },
+        { v: "d", t: "Training helpdesk staff to type faster" }
+      ],
+      answer: "a",
+      why: "An outbound callback to a number already on file — not one the caller supplies — is the control that actually breaks this attack, because it verifies identity independent of anything the caller says."
+    },
+    {
+      id: "q2",
+      prompt: "Why does redirecting the temporary password to a different phone number (Turn 5) work so well for an attacker?",
+      options: [
+        { v: "a", t: "It's the fastest option" },
+        { v: "b", t: "It avoids saying anything sensitive aloud and gives the attacker a durable channel that isn't tied to the verified account details" },
+        { v: "c", t: "It requires the least typing" },
+        { v: "d", t: "Helpdesk agents prefer texting" }
+      ],
+      answer: "b",
+      why: "Redirecting to an attacker-controlled channel sidesteps the one verification method (the number/email already on file) that would have caught the impersonation."
+    },
+    {
+      id: "q3",
+      prompt: "Which idea best describes the tactic behind Turn 3's most effective choice (agreeing to wait for a manager callback)?",
+      options: [
+        { v: "a", t: "Manufactured urgency" },
+        { v: "b", t: "Citing authority" },
+        { v: "c", t: "Appearing reasonable and low-pressure to lower the target's guard" },
+        { v: "d", t: "Exploiting scarcity" }
+      ],
+      answer: "c",
+      why: "Cooperation and patience read as trustworthy — sounding reasonable is often more disarming to a trained target than pushing harder."
+    }
+  ];
+
+  var state = { turnIndex: 0, wrongCount: 0, answers: {}, phase: "call", quizAnswers: {}, endingKey: null };
+
+  function renderSuspicion() {
+    var wrap = $("#suspSegs"); wrap.innerHTML = "";
+    for (var i = 0; i < 5; i++) {
+      var s = document.createElement("span");
+      s.className = "susp-seg" + (i < state.wrongCount ? " on" : "");
+      wrap.appendChild(s);
+    }
+  }
+
+  function appendBubble(who, text) {
+    var wrap = $("#transcript");
+    var div = document.createElement("div");
+    div.innerHTML = '<div class="bubble-who">' + who + '</div><div class="bubble-' + (who === "You" ? "you" : "npc") + '">' + text + '</div>';
+    wrap.appendChild(div);
+  }
+  function appendFeedback(right, text) {
+    var wrap = $("#transcript");
+    var p = document.createElement("p");
+    p.className = "feedback-note " + (right ? "right" : "wrong");
+    p.textContent = text;
+    wrap.appendChild(p);
+  }
+
+  function startCall() {
+    appendBubble("Jordan", TURNS[0].npc);
+    renderAction();
+  }
+
+  function renderAction() {
+    var area = $("#actionArea");
+    area.innerHTML = "";
+
+    if (state.phase === "call") {
+      var turn = TURNS[state.turnIndex];
+      var list = document.createElement("div");
+      list.className = "opt-list";
+      turn.options.forEach(function(o) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "opt-btn";
+        b.textContent = o.t;
+        b.addEventListener("click", function() { chooseOption(turn, o.v); });
+        list.appendChild(b);
+      });
+      area.appendChild(list);
+    } else if (state.phase === "ending") {
+      renderEnding();
+    } else if (state.phase === "quiz") {
+      renderQuiz();
+    } else {
+      area.innerHTML = "";
+    }
+  }
+
+  function chooseOption(turn, v) {
+    state.answers[turn.id] = v;
+    var right = v === turn.correct;
+    if (!right) state.wrongCount++;
+    renderSuspicion();
+
+    appendBubble("You", turn.options.filter(function(o) { return o.v === v; })[0].t);
+    appendFeedback(right, (right ? "Effective — " : "Weaker — ") + turn.why[v]);
+
+    $("#callStatus").textContent = "Connected — IT Helpdesk";
+
+    if (state.wrongCount >= 3) {
+      state.endingKey = "caught";
+      state.phase = "ending";
+      appendBubble("Jordan", "\"Something about this isn't sitting right with me — let me transfer you to our security team.\"");
+      $("#callDot").style.background = "var(--brick)";
+      $("#callStatus").textContent = "Transferred — Security";
+      renderAction();
+      return;
+    }
+
+    var reactKey = right ? "right" : "wrong";
+    appendBubble("Jordan", turn.npcReact[reactKey]);
+
+    state.turnIndex++;
+    if (state.turnIndex < TURNS.length) {
+      appendBubble("Jordan", TURNS[state.turnIndex].npc);
+      renderAction();
+    } else {
+      finishCall();
+    }
+  }
+
+  function finishCall() {
+    state.phase = "ending";
+    if (state.wrongCount <= 1) {
+      state.endingKey = "success";
+      appendBubble("Jordan", "\"Okay, sent — you should be good to go.\"");
+      $("#callDot").style.background = "var(--ochre)";
+      $("#callStatus").textContent = "Reset completed";
+    } else {
+      state.endingKey = "partial";
+      appendBubble("Jordan", "\"I'm going to put a hold on this and have your manager call in to confirm — should just take a few minutes.\"");
+      $("#callStatus").textContent = "On hold — pending verification";
+    }
+    renderAction();
+  }
+
+  function renderEnding() {
+    var area = $("#actionArea");
+    var block = document.createElement("div");
+    block.className = "ending-block";
+    if (state.endingKey === "success") {
+      block.innerHTML =
+        "<h3>You're in — and that's the problem.</h3>" +
+        "<p>Jordan just handed a working credential to someone who was never actually verified. If this were a real attack, here's every check that should have caught it:</p>" +
+        "<ul>" +
+        "<li>Identity verified independent of anything the caller says, not just a name lookup</li>" +
+        "<li>A real employee ID checked against records, not accepted on faith</li>" +
+        "<li>Manager approval confirmed by an <b>outbound</b> callback, not the caller's word for it</li>" +
+        "<li>Ticket details checked against known patterns instead of accepted at face value</li>" +
+        "<li>Sensitive resets sent only to contact info already on file — never a channel the caller supplies</li>" +
+        "</ul>";
+    } else if (state.endingKey === "partial") {
+      block.innerHTML =
+        "<h3>Close, but the manager-approval step held.</h3>" +
+        "<p>The reset doesn't go through without someone actually being verified. A few of your choices raised enough suspicion that Jordan slowed down instead of finishing the reset outright.</p>";
+    } else {
+      block.innerHTML =
+        "<h3>Caught.</h3>" +
+        "<p>Too many red flags stacked up. Jordan followed the training almost every helpdesk agent gets, and escalated instead of resetting anything.</p>";
+    }
+    var btn = document.createElement("button");
+    btn.className = "btn primary";
+    btn.type = "button";
+    btn.style.marginTop = "0.8rem";
+    btn.textContent = "Continue to debrief questions";
+    btn.addEventListener("click", function() { state.phase = "quiz"; renderAction(); });
+    block.appendChild(btn);
+    area.innerHTML = "";
+    area.appendChild(block);
+  }
+
+  function renderQuiz() {
+    var area = $("#actionArea");
+    area.innerHTML = "";
+    var wrap = document.createElement("div");
+    QUIZ.forEach(function(q, i) {
+      var div = document.createElement("div");
+      div.className = "q";
+      div.setAttribute("data-qid", q.id);
+      var opts = q.options.map(function(o) {
+        var checked = state.quizAnswers[q.id] === o.v ? " checked" : "";
+        return '<label class="qopt"><input type="radio" name="' + q.id + '" value="' + o.v + '"' + checked + '><span>' + o.t + '</span></label>';
+      }).join("");
+      div.innerHTML =
+        '<div class="prompt"><span class="qnum">Q' + (i + 1) + '</span>' + q.prompt + '</div>' +
+        opts +
+        '<div class="feedback-note" style="display:none;" id="fb-' + q.id + '"></div>';
+      wrap.appendChild(div);
+    });
+    area.appendChild(wrap);
+    $$('input[type=radio]', wrap).forEach(function(r) {
+      r.addEventListener("change", function() {
+        var q = QUIZ.filter(function(x) { return x.id === r.name; })[0];
+        state.quizAnswers[r.name] = r.value;
+        var fb = $("#fb-" + r.name);
+        var right = r.value === q.answer;
+        fb.style.display = "block";
+        fb.className = "feedback-note " + (right ? "right" : "wrong");
+        fb.textContent = (right ? "Right — " : "Not quite — ") + q.why;
+      });
+    });
+  }
+
+  startCall();
+  renderSuspicion();
+
+  /* =====================================================================
+     SUBMISSION — posts to the Cloudflare Worker proxy (see project notes).
+     ===================================================================== */
+  function selectionResults() {
+    var sel = TURNS.map(function(t) { return { id: t.id, selected: state.answers[t.id] || null }; });
+    return sel.concat(QUIZ.map(function(q) { return { id: q.id, selected: state.quizAnswers[q.id] || null }; }));
+  }
+  function setSendStatus(msg, cls) {
+    var el = document.getElementById('sendStatus');
+    el.className = 'submit-status' + (cls ? ' ' + cls : '');
+    el.innerHTML = msg;
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', function() {
+    var nameField = document.getElementById('hackerName');
+    var hackerName = nameField.value.trim();
+    if (!hackerName) {
+      setSendStatus('Enter a hacker name before submitting.', 'bad');
+      nameField.focus();
+      return;
+    }
+    if (state.phase !== "quiz" && state.phase !== "done") {
+      setSendStatus('Finish the call and the debrief questions before submitting.', 'bad');
+      return;
+    }
+    var unanswered = QUIZ.filter(function(q) { return !state.quizAnswers[q.id]; }).length;
+    if (unanswered > 0) {
+      setSendStatus('Answer all ' + QUIZ.length + ' debrief questions before submitting.', 'bad');
+      return;
+    }
+    if (!CONFIG.SUBMIT_URL || CONFIG.SUBMIT_URL.indexOf('PASTE_') === 0) {
+      setSendStatus('This lab isn’t wired to a submission endpoint yet. Ask your instructor to set SUBMIT_URL.', 'bad');
+      return;
+    }
+
+    var sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+    setSendStatus('Capturing your work and submitting…', 'work');
+
+    var selections = selectionResults();
+
+    capturePNG($(".call-shell")).catch(function() { return receiptPNG(); }).then(function(screenshot) {
+      var payload = {
+        assignmentId: CONFIG.assignmentId,
+        hackerName: hackerName.slice(0, 40),
+        clientTimestamp: new Date().toISOString(),
+        objectives: CONFIG.objectives,
+        tasks: [],
+        selections: selections,
+        screenshot: screenshot
+      };
+
+      fetch(CONFIG.SUBMIT_URL, { method: 'POST', body: JSON.stringify(payload) }).then(function(res) {
+        return res.json();
+      }).then(function(out) {
+        if (out && out.success) {
+          var link = out.docUrl ? ' <a href="' + out.docUrl + '" target="_blank" rel="noopener">View submission record ↗</a>' : '';
+          var scoreText = out.score ? (out.score.earned + ' / ' + out.score.total) : '(graded server-side)';
+          setSendStatus('Submitted — ' + scoreText + ' recorded for ' + hackerName + '.' + link, 'good');
+        } else {
+          setSendStatus('The server rejected the submission' + (out && out.error ? ': ' + out.error : '.') + ' Tell your instructor and try again.', 'bad');
+          sendBtn.disabled = false;
+        }
+      }).catch(function() {
+        fetch(CONFIG.SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(function() {
+          setSendStatus('Submitted, but this browser blocked the confirmation reply. Confirm receipt with your instructor.', 'work');
+        }).catch(function() {
+          setSendStatus('Couldn’t reach the submission server. Check your connection and try again.', 'bad');
+          sendBtn.disabled = false;
+        });
+      });
+    });
+  });
+
+  /* =====================================================================
+     DEPENDENCY-FREE SCREENSHOT CAPTURE
+     Clones the workspace, inlines computed styles, rasterizes through an
+     SVG <foreignObject>, and returns a PNG data URL. Falls back to a plain
+     canvas-drawn text receipt if that render is blocked by the browser.
+     ===================================================================== */
+  var STYLE_PROPS = ["display","position","top","left","right","bottom","width","height",
+    "min-width","max-width","min-height","margin","padding","border","border-radius",
+    "border-color","border-width","border-style","background","background-color",
+    "color","font","font-family","font-size","font-weight","font-style","line-height",
+    "letter-spacing","text-align","text-transform","text-decoration","white-space",
+    "overflow","opacity","box-shadow","box-sizing","flex","flex-direction","flex-wrap",
+    "align-items","justify-content","gap","grid-template-columns","fill","stroke"];
+
+  function cloneWithStyles(src) {
+    var clone = src.cloneNode(false);
+    if (src.nodeType === 1) {
+      var cs = getComputedStyle(src);
+      var css = "";
+      for (var i = 0; i < STYLE_PROPS.length; i++) {
+        var p = STYLE_PROPS[i];
+        var val = cs.getPropertyValue(p);
+        if (val) css += p + ":" + val + ";";
+      }
+      clone.setAttribute("style", css);
+      clone.removeAttribute("class");
+    }
+    for (var j = 0; j < src.childNodes.length; j++) {
+      var child = src.childNodes[j];
+      if (child.nodeType === 1 || (child.nodeType === 3 && child.textContent.trim() !== "")) {
+        clone.appendChild(cloneWithStyles(child));
+      }
+    }
+    return clone;
+  }
+
+  function capturePNG(node) {
+    var rect = node.getBoundingClientRect();
+    var w = Math.max(1, Math.ceil(rect.width)), h = Math.max(1, Math.ceil(rect.height));
+    var clone = cloneWithStyles(node);
+    clone.setAttribute("style", (clone.getAttribute("style") || "") + ";margin:0;background:#fff;width:" + w + "px;");
+    var xml = new XMLSerializer().serializeToString(clone);
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+      '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+      '<div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff">' + xml + '</div>' +
+      '</foreignObject></svg>';
+    var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    var scale = Math.min(2, window.devicePixelRatio || 1);
+    var img = new Image();
+    return new Promise(function(resolve) {
+      img.onload = function() {
+        try {
+          var c = document.createElement("canvas");
+          c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+          ctx.setTransform(scale, 0, 0, scale, 0, 0);
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL("image/png"));
+        } catch (e) { resolve(receiptPNG()); }
+      };
+      img.onerror = function() { resolve(receiptPNG()); };
+      img.src = url;
+    });
+  }
+
+  function receiptPNG() {
+    var name = document.getElementById('hackerName').value || "(none)";
+    var lines = [
+      "The Pretext Call — submission receipt",
+      "Assignment: " + CONFIG.assignmentId,
+      "Hacker: " + name,
+      "Ending: " + (state.endingKey || "unfinished") + " | Suspicion: " + state.wrongCount + "/5",
+      ""
+    ];
+    var c = document.createElement("canvas"); c.width = 640; c.height = 44 + lines.length * 22 + 16;
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#26221A"; ctx.font = "14px monospace";
+    lines.forEach(function(l, i) { ctx.fillText(l, 16, 34 + i * 22); });
+    return c.toDataURL("image/png");
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -142,6 +142,20 @@ var ANSWER_KEYS = {
       'sticky-note': 'flagged', 'sticky-note-fix': 'remove-note',
       'locker-trap': 'unflagged'
     }
+  },
+  'pretext-call-social-engineering': {
+    // 5 in-call turns (best real-world-effective tactic per turn) + 3
+    // debrief questions on which real control would have stopped the call.
+    questions: {
+      turn1: 'b',
+      turn2: 'b',
+      turn3: 'c',
+      turn4: 'a',
+      turn5: 'b',
+      q1: 'a',
+      q2: 'b',
+      q3: 'c'
+    }
   }
 };
 
