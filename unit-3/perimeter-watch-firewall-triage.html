@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perimeter Watch — Thornbury Community Credit Union | AP Cybersecurity Lab</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .policy-panel {
+    background: var(--paper-card);
+    border: 1px solid var(--paper-dark);
+    border-left: 4px solid var(--plum);
+    padding: 1.1rem 1.2rem 1.2rem;
+    margin: 1.3rem 0 1.8rem;
+    position: relative;
+  }
+  .acl-scroll { overflow-x: auto; }
+  .policy-panel::after {
+    content: "ACTIVE FIREWALL POLICY";
+    position: absolute;
+    top: -0.6rem; left: 1rem;
+    background: var(--paper-bg);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    padding: 0 0.4rem;
+  }
+  .policy-note { margin: 0 0 0.9rem; font-size: 0.78rem; color: var(--ink-soft); font-family: var(--mono); }
+  table.acl-table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.84rem; }
+  table.acl-table th, table.acl-table td { padding: 0.5rem 0.7rem; text-align: left; border-bottom: 1px dashed var(--line); }
+  table.acl-table th {
+    font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--ink-faint); border-bottom: 2px solid var(--ink);
+  }
+  table.acl-table td { font-family: var(--body); color: var(--ink); }
+  table.acl-table td.mono { font-family: var(--mono); font-size: 0.8rem; }
+  table.acl-table tr:last-child td { border-bottom: none; }
+  table.acl-table .rule-num { font-family: var(--mono); font-weight: 700; color: var(--ink-soft); }
+  table.acl-table .act { font-family: var(--mono); font-weight: 700; font-size: 0.72rem; padding: 0.15rem 0.5rem; }
+  table.acl-table .act.allow { background: var(--teal-wash); color: var(--teal); }
+  table.acl-table .act.deny { background: var(--brick-wash); color: var(--brick); }
+  table.acl-table tr.implicit td { opacity: 0.7; font-style: italic; }
+
+  .traffic-app { display: grid; grid-template-columns: 300px 1fr; min-height: 460px; }
+  .traffic-list { border-right: 1px solid var(--paper-dark); background: var(--paper-bg); overflow-y: auto; max-height: 660px; }
+  .traffic-item { padding: 0.75rem 1rem; border-bottom: 1px solid var(--paper-dark); cursor: pointer; position: relative; font-family: var(--mono); }
+  .traffic-item:hover { background: #d9c9a0; }
+  .traffic-item.active { background: #fff; border-left: 3px solid var(--plum); }
+  .traffic-item .ti-flow { font-weight: 700; font-size: 0.82rem; }
+  .traffic-item .ti-meta { font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.15rem; }
+  .traffic-item .ti-badge {
+    position: absolute; top: 0.65rem; right: 0.7rem;
+    font-family: var(--mono); font-size: 0.58rem; font-weight: 700;
+    padding: 0.08rem 0.35rem; border-radius: 4px;
+  }
+  .traffic-item.sorted.correct .ti-badge { background: var(--teal-wash); color: var(--teal); }
+  .traffic-item.sorted.incorrect .ti-badge { background: var(--brick-wash); color: var(--brick); }
+
+  .traffic-detail { padding: 1.4rem 1.6rem; display: flex; flex-direction: column; min-height: 460px; }
+  .td-empty { margin: auto; color: var(--ink-faint); font-family: var(--mono); font-size: 0.85rem; text-align: center; }
+  .td-head { border-bottom: 1px solid var(--paper-dark); padding-bottom: 0.9rem; margin-bottom: 1rem; }
+  .td-head .td-title { font-family: var(--display); font-size: 1.05rem; font-weight: 400; margin: 0 0 0.5rem; }
+  .tuple-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.2rem; font-size: 0.88rem; }
+  .tuple-grid .tg-label { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); display: block; margin-bottom: 0.15rem; }
+  .tuple-grid .tg-val { color: var(--ink); }
+  .tuple-grid .tg-sub { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.1rem; }
+
+  .verdict-block { border-top: 1px solid var(--paper-dark); background: var(--paper-card); padding: 1rem 0 0; margin-top: 1.2rem; }
+  .verdict-block h4 { margin: 0 0 0.2rem; font-size: 0.92rem; font-family: var(--display); font-weight: 400; }
+  .verdict-hint { margin: 0 0 0.8rem; font-size: 0.78rem; color: var(--ink-soft); }
+  .opt-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 0.6rem; text-align: left; cursor: pointer;
+    border: 1px solid var(--paper-dark); background: #fff; border-radius: 4px; padding: 0.7rem 0.85rem;
+    font-family: var(--body); color: var(--ink); font-size: 0.88rem;
+  }
+  .opt:hover { border-color: var(--teal); }
+  .opt .mark { flex: 0 0 auto; width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--paper-dark); margin-top: 2px; position: relative; }
+  .opt b { display: block; font-size: 0.9rem; }
+  .opt small { color: var(--ink-soft); font-size: 0.76rem; }
+  .opt[aria-pressed="true"] { border-color: var(--teal); background: var(--teal-wash); }
+  .opt[aria-pressed="true"] .mark { border-color: var(--teal); }
+  .opt[aria-pressed="true"] .mark::after { content:""; position:absolute; inset:2px; border-radius:50%; background: var(--teal); }
+  .opt.danger[aria-pressed="true"] { border-color: var(--brick); background: var(--brick-wash); }
+  .opt.danger[aria-pressed="true"] .mark { border-color: var(--brick); }
+  .opt.danger[aria-pressed="true"] .mark::after { background: var(--brick); }
+
+  .fb { margin-top: 0.8rem; padding: 0.7rem 0.85rem; border-radius: 4px; font-size: 0.85rem; display: none; }
+  .fb.show { display: block; }
+  .fb.ok { background: var(--teal-wash); color: #155e3a; border: 1px solid #bbdfc8; }
+  .fb.no { background: var(--ochre-wash); color: #7a5a07; border: 1px solid #e8d29a; }
+  .fb .rule-cite { font-family: var(--mono); font-weight: 700; }
+
+  .packet-strip {
+    font-family: var(--mono); font-size: 0.78rem; background: var(--scanner-bg); color: var(--scanner-mono);
+    padding: 0.6rem 1rem; min-height: 2.2rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .packet-strip .lbl { color: var(--scanner-ink); }
+
+  .submit-panel { background: var(--paper-bg); border: 1px solid var(--paper-dark); border-top: 3px solid var(--ink); padding: 1.1rem 1.3rem; margin-top: 1rem; }
+  .submit-panel h3 { font-family: var(--display); font-weight: 400; margin: 0 0 0.3rem; font-size: 1.05rem; }
+  .submit-panel .sp-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 0.9rem; }
+  .submit-row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+  .submit-field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 220px; }
+  .submit-field label { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .submit-field input { font: inherit; font-size: 0.88rem; padding: 0.5rem 0.65rem; border: 1px solid var(--paper-dark); background: #fff; color: var(--ink); }
+  .submit-status { font-size: 0.82rem; margin-top: 0.7rem; min-height: 1.2em; }
+  .submit-status.good { color: var(--teal); }
+  .submit-status.bad { color: var(--brick); }
+  .submit-status.work { color: var(--ochre); }
+  .submit-status a { color: var(--teal); font-weight: 700; }
+
+  @media (max-width: 720px) {
+    .traffic-app { grid-template-columns: 1fr; }
+    .traffic-list { max-height: 220px; }
+    .tuple-grid { grid-template-columns: 1fr; }
+    .opt-list { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../index.html">Case Files <span class="tag">AP CYBER</span></a>
+  <nav class="topnav"><a href="../index.html">All labs</a></nav>
+</div>
+
+<main class="shell">
+  <a class="back-link" href="../index.html">← Back to lab index</a>
+
+  <div class="case-strip">
+    <span>Security+ SY0-701</span>
+    <span class="obj-chip">Obj 3.2 — Secure Enterprise Infrastructure</span>
+    <span class="obj-chip">Obj 1.2 — Zero Trust / PEP</span>
+  </div>
+
+  <h1 class="title" style="font-size:1.7rem;">Perimeter Watch — Thornbury Community Credit Union</h1>
+  <p class="lede">
+    Work the edge policy enforcement point. Ten connection attempts came through this shift — apply
+    the ordered firewall policy below to each one, in the order the rules are written, and decide
+    ALLOW or DENY. First match wins; anything left unmatched is dropped.
+  </p>
+
+  <div class="case-brief">
+    ▲ You're the SOC analyst monitoring the edge PEP for <b>Thornbury Community Credit Union</b>.
+    The network has three zones: the <b>DMZ</b> (<b>10.20.10.0/24</b> — public banking portal and
+    ATM transaction gateway), the <b>corporate LAN</b> (<b>10.20.20.0/24</b> — employee machines),
+    and the restricted <b>core zone</b> (<b>10.20.30.0/24</b> — core banking database and backup
+    server). Thornbury's ATM network partner connects from <b>198.51.100.0/24</b>; their
+    backup-maintenance contractor connects only from the static address <b>203.0.113.50</b>.
+  </div>
+
+  <div class="policy-panel">
+    <p class="policy-note">Rules are evaluated top to bottom. The first rule that matches a connection decides its fate — later rules are never checked once one matches.</p>
+    <div class="acl-scroll">
+    <table class="acl-table">
+      <thead>
+        <tr><th>#</th><th>Source</th><th>Destination</th><th>Port / Proto</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="rule-num">1</td><td class="mono">Any</td><td class="mono">10.20.10.10 (banking portal)</td><td class="mono">443 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr><td class="rule-num">2</td><td class="mono">Any</td><td class="mono">10.20.10.10 (banking portal)</td><td class="mono">80 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr><td class="rule-num">3</td><td class="mono">198.51.100.0/24 (ATM partner)</td><td class="mono">10.20.10.30 (ATM gateway)</td><td class="mono">8443 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr><td class="rule-num">4</td><td class="mono">203.0.113.50 (backup contractor)</td><td class="mono">10.20.30.20 (backup server)</td><td class="mono">22 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr><td class="rule-num">5</td><td class="mono">Any</td><td class="mono">10.20.30.0/24 (core zone)</td><td class="mono">Any</td><td><span class="act deny">DENY</span></td></tr>
+        <tr><td class="rule-num">6</td><td class="mono">10.20.20.0/24 (corporate LAN)</td><td class="mono">10.20.30.10 (core database)</td><td class="mono">1433 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr><td class="rule-num">7</td><td class="mono">Any</td><td class="mono">Any</td><td class="mono">3389 / TCP (RDP)</td><td><span class="act deny">DENY</span></td></tr>
+        <tr><td class="rule-num">8</td><td class="mono">10.20.20.0/24 (corporate LAN)</td><td class="mono">Any</td><td class="mono">443 / TCP</td><td><span class="act allow">ALLOW</span></td></tr>
+        <tr class="implicit"><td class="rule-num">—</td><td class="mono">Any</td><td class="mono">Any</td><td class="mono">Any</td><td><span class="act deny">DENY</span> (implicit)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="traffic-app">
+      <div class="traffic-list" id="trafficList"></div>
+      <div class="traffic-detail" id="trafficDetail">
+        <p class="td-empty">Select a connection attempt from the list to inspect it.</p>
+      </div>
+    </div>
+    <div class="packet-strip" id="packetStrip"><span class="lbl">Current packet:</span> select an attempt to inspect its tuple</div>
+  </div>
+
+  <div class="progress-bar">
+    <span id="progressLabel">0 / 10 decided</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <button class="btn" id="resetBtn">Reset lab</button>
+    <button class="btn primary" id="submitBtn" disabled>Show results</button>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <h3>Shift summary</h3>
+    <p><span class="score-big" id="scoreBig">0 / 10</span> <span style="color:var(--ink-soft); font-family:var(--mono); font-size:0.8rem;">correctly enforced</span></p>
+    <ul id="resultsList"></ul>
+  </div>
+
+  <div class="submit-panel">
+    <h3>Submit to instructor</h3>
+    <p class="sp-note">
+      Enter a pseudonym (no real names) and submit once you've decided every connection attempt.
+      This sends your score, task checklist, and a snapshot of your work to your instructor —
+      it does not use your name or any other personal info.
+    </p>
+    <div class="submit-row">
+      <div class="submit-field">
+        <label for="hackerName">Hacker name (pseudonym)</label>
+        <input id="hackerName" type="text" maxlength="40" autocomplete="off" placeholder="e.g. trailhawk_07">
+      </div>
+      <button class="btn primary" id="sendBtn" type="button">Submit completed lab</button>
+    </div>
+    <p class="submit-status" id="sendStatus" role="status" aria-live="polite"></p>
+  </div>
+
+</main>
+
+<footer class="site-foot">
+  Clean-room original lab for CompTIA Security+ SY0-701, objectives 3.2 &amp; 1.2. Runs entirely client-side — no data leaves this page.
+</footer>
+
+<script>
+const CONFIG = {
+  assignmentId: "perimeter-watch-firewall-triage",
+  objectives: ["3.2", "1.2"],
+  // Public submission proxy (Cloudflare Worker) — it holds the real Apps
+  // Script URL and shared token as server-side secrets, never exposed here.
+  SUBMIT_URL: "https://cyber-labs-submit-proxy.wlhs-apcyber.workers.dev"
+};
+
+const TASKS = [
+  { id: "opened-all", label: "Inspect all 10 connection attempts",
+    pass: () => Object.keys(opened).length === attempts.length },
+  { id: "classified-all", label: "Decide every connection attempt",
+    pass: () => Object.keys(sorted).length === attempts.length },
+  { id: "all-correct", label: "Enforce the policy correctly on every attempt",
+    pass: () => attempts.every(a => sorted[a.id] === a.correct) }
+];
+
+const OPTIONS = [
+  { v: "allow", danger: false, title: "ALLOW",
+    sub: "Permit this connection through the PEP." },
+  { v: "deny", danger: true, title: "DENY",
+    sub: "Drop this connection at the PEP." }
+];
+
+const attempts = [
+  {
+    id: 1,
+    src: "192.0.2.15", srcLabel: "Unrecognized internet host",
+    dst: "10.20.10.10", dstLabel: "Public banking portal (web01) · DMZ",
+    port: 443, proto: "TCP",
+    correct: "allow", rule: "Rule 1",
+    why: "Rule 1 allows any source to reach the public banking portal on 443/TCP — that's the whole point of a public portal."
+  },
+  {
+    id: 2,
+    src: "198.51.100.77", srcLabel: "ATM network partner (198.51.100.0/24)",
+    dst: "10.20.10.30", dstLabel: "ATM transaction gateway · DMZ",
+    port: 8443, proto: "TCP",
+    correct: "allow", rule: "Rule 3",
+    why: "The source falls inside the ATM partner's 198.51.100.0/24 range, and the destination and port match the dedicated gateway exactly — Rule 3 allows it, even though the port looks unusual."
+  },
+  {
+    id: 3,
+    src: "203.0.113.50", srcLabel: "Backup-maintenance contractor (authorized static IP)",
+    dst: "10.20.30.20", dstLabel: "Backup server · Core zone",
+    port: 22, proto: "TCP",
+    correct: "allow", rule: "Rule 4",
+    why: "This exact address is the one contractor IP Rule 4 permits for SSH to the backup server — and Rule 4 sits above Rule 5's broad core-zone deny, so it fires first. Order matters."
+  },
+  {
+    id: 4,
+    src: "203.0.113.201", srcLabel: "Unrecognized internet host",
+    dst: "10.20.30.20", dstLabel: "Backup server · Core zone",
+    port: 22, proto: "TCP",
+    correct: "deny", rule: "Rule 5",
+    why: "Same destination and port as the last attempt, but a different source IP — it doesn't match Rule 4's single permitted address, so it falls through to Rule 5's deny-all on the core zone."
+  },
+  {
+    id: 5,
+    src: "10.20.20.44", srcLabel: "Employee workstation · Corporate LAN",
+    dst: "10.20.30.10", dstLabel: "Core banking database · Core zone",
+    port: 1433, proto: "TCP",
+    correct: "allow", rule: "Rule 6",
+    why: "Rule 6 allows the corporate LAN to reach the core database on its SQL port — this is the internal application traffic the bank runs on."
+  },
+  {
+    id: 6,
+    src: "192.0.2.88", srcLabel: "Unrecognized internet host",
+    dst: "10.20.20.44", dstLabel: "Employee workstation · Corporate LAN",
+    port: 3389, proto: "TCP",
+    correct: "deny", rule: "Rule 7",
+    why: "Rule 7 blocks RDP everywhere, no exceptions — an internet host trying to RDP into an employee machine is exactly the ransomware-entry scenario that rule exists to stop."
+  },
+  {
+    id: 7,
+    src: "10.20.20.60", srcLabel: "Employee workstation · Corporate LAN",
+    dst: "172.16.5.9", dstLabel: "External website",
+    port: 443, proto: "TCP",
+    correct: "allow", rule: "Rule 8",
+    why: "Rule 8 allows the corporate LAN outbound to the web on 443/TCP — ordinary employee browsing."
+  },
+  {
+    id: 8,
+    src: "198.51.100.77", srcLabel: "ATM network partner (198.51.100.0/24)",
+    dst: "10.20.10.10", dstLabel: "Public banking portal (web01) · DMZ",
+    port: 22, proto: "TCP",
+    correct: "deny", rule: "implicit deny",
+    why: "Same trusted partner IP as before, but the wrong host and port — Rule 3 only covers the ATM gateway on 8443, not SSH to the banking portal. Nothing else matches, so it's dropped by the implicit deny."
+  },
+  {
+    id: 9,
+    src: "203.0.113.19", srcLabel: "Unrecognized internet host",
+    dst: "10.20.10.10", dstLabel: "Public banking portal (web01) · DMZ",
+    port: 80, proto: "TCP",
+    correct: "allow", rule: "Rule 2",
+    why: "Rule 2 allows any source to reach the portal on 80/TCP — plain HTTP, kept open only to redirect visitors to HTTPS."
+  },
+  {
+    id: 10,
+    src: "192.0.2.5", srcLabel: "Unrecognized internet host",
+    dst: "10.20.30.10", dstLabel: "Core banking database · Core zone",
+    port: 1433, proto: "TCP",
+    correct: "deny", rule: "Rule 5",
+    why: "An internet host reaching straight for the core database — Rule 5 denies any traffic into the core zone from outside, regardless of port."
+  }
+];
+
+let current = null;
+const sorted = {}; // id -> chosen option value
+const opened = {}; // id -> true once inspected
+
+const trafficList = document.getElementById('trafficList');
+const trafficDetail = document.getElementById('trafficDetail');
+const packetStrip = document.getElementById('packetStrip');
+const progressLabel = document.getElementById('progressLabel');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const resultsPanel = document.getElementById('resultsPanel');
+const resultsList = document.getElementById('resultsList');
+const scoreBig = document.getElementById('scoreBig');
+
+function renderList() {
+  trafficList.innerHTML = '';
+  attempts.forEach(a => {
+    const item = document.createElement('div');
+    item.className = 'traffic-item' + (current === a.id ? ' active' : '') + (sorted[a.id] ? ' sorted' : '');
+    if (sorted[a.id]) {
+      item.classList.add(sorted[a.id] === a.correct ? 'correct' : 'incorrect');
+    }
+    item.innerHTML = `
+      <div class="ti-flow">${a.src} → ${a.dst}:${a.port}</div>
+      <div class="ti-meta">${a.proto} · attempt #${a.id}</div>
+      ${sorted[a.id] ? `<span class="ti-badge">${sorted[a.id] === a.correct ? 'CORRECT' : 'RECHECK'}</span>` : ''}
+    `;
+    item.addEventListener('click', () => openAttempt(a.id));
+    trafficList.appendChild(item);
+  });
+}
+
+function openAttempt(id) {
+  current = id;
+  opened[id] = true;
+  const a = attempts.find(x => x.id === id);
+  const chosen = sorted[id];
+  const answered = !!chosen;
+  const correct = answered && chosen === a.correct;
+
+  const optsHtml = OPTIONS.map(o => {
+    const on = chosen === o.v;
+    return `<button type="button" class="opt${o.danger ? ' danger' : ''}" data-v="${o.v}" aria-pressed="${on}">
+      <span class="mark" aria-hidden="true"></span>
+      <span><b>${o.title}</b><small>${o.sub}</small></span>
+    </button>`;
+  }).join('');
+
+  trafficDetail.innerHTML = `
+    <div class="td-head">
+      <p class="td-title">Connection attempt #${a.id}</p>
+    </div>
+    <div class="tuple-grid">
+      <div><span class="tg-label">Source</span><span class="tg-val">${a.src}</span><span class="tg-sub">${a.srcLabel}</span></div>
+      <div><span class="tg-label">Destination</span><span class="tg-val">${a.dst}:${a.port}</span><span class="tg-sub">${a.dstLabel}</span></div>
+      <div><span class="tg-label">Protocol</span><span class="tg-val">${a.proto}</span></div>
+      <div><span class="tg-label">Destination port</span><span class="tg-val">${a.port}</span></div>
+    </div>
+    <div class="verdict-block">
+      <h4>Your call</h4>
+      <p class="verdict-hint">Check the policy above in order, then decide. You can change your answer any time.</p>
+      <div class="opt-list">${optsHtml}</div>
+      <div class="fb${answered ? (correct ? ' show ok' : ' show no') : ''}">
+        ${answered ? `<b>${correct ? 'Correct.' : 'Reconsider.'}</b> <span class="rule-cite">${a.rule}.</span> ${a.why}` : ''}
+      </div>
+    </div>
+  `;
+
+  trafficDetail.querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => decide(id, btn.dataset.v));
+  });
+
+  packetStrip.innerHTML = `<span class="lbl">Current packet:</span> SRC ${a.src} → DST ${a.dst}:${a.port} ${a.proto}`;
+
+  renderList();
+}
+
+function decide(id, verdict) {
+  sorted[id] = verdict;
+  renderList();
+  openAttempt(id);
+  updateProgress();
+}
+
+function updateProgress() {
+  const count = Object.keys(sorted).length;
+  progressLabel.textContent = `${count} / ${attempts.length} decided`;
+  progressFill.style.width = `${(count / attempts.length) * 100}%`;
+  submitBtn.disabled = count < attempts.length;
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  current = null;
+  for (const k in sorted) delete sorted[k];
+  for (const k in opened) delete opened[k];
+  updateProgress();
+  resultsPanel.classList.remove('show');
+  trafficDetail.innerHTML = '<p class="td-empty">Select a connection attempt from the list to inspect it.</p>';
+  packetStrip.innerHTML = '<span class="lbl">Current packet:</span> select an attempt to inspect its tuple';
+  renderList();
+  document.getElementById('sendStatus').className = 'submit-status';
+  document.getElementById('sendStatus').textContent = '';
+});
+
+submitBtn.addEventListener('click', () => {
+  let score = 0;
+  resultsList.innerHTML = '';
+  attempts.forEach(a => {
+    const chosenOpt = OPTIONS.find(o => o.v === sorted[a.id]);
+    const correctOpt = OPTIONS.find(o => o.v === a.correct);
+    const correct = sorted[a.id] === a.correct;
+    if (correct) score++;
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="tag ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'Missed'}</span>
+      <b>#${a.id} ${a.src} → ${a.dst}:${a.port}</b> — you chose <b>${chosenOpt ? chosenOpt.title : '(none)'}</b>, actually
+      <b>${correctOpt.title}</b> (${a.rule}). ${a.why}`;
+    resultsList.appendChild(li);
+  });
+  scoreBig.textContent = `${score} / ${attempts.length}`;
+  resultsPanel.classList.add('show');
+  resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+renderList();
+
+/* =====================================================================
+   DEPENDENCY-FREE SCREENSHOT CAPTURE
+   Clones the workspace, inlines computed styles, rasterizes through an
+   SVG <foreignObject>, and returns a PNG data URL. Falls back to a plain
+   canvas-drawn text receipt if that render is blocked by the browser.
+   ===================================================================== */
+const STYLE_PROPS = ["display","position","top","left","right","bottom","width","height",
+  "min-width","max-width","min-height","margin","padding","border","border-radius",
+  "border-color","border-width","border-style","background","background-color",
+  "color","font","font-family","font-size","font-weight","font-style","line-height",
+  "letter-spacing","text-align","text-transform","text-decoration","white-space",
+  "overflow","opacity","box-shadow","box-sizing","flex","flex-direction","flex-wrap",
+  "align-items","justify-content","gap","grid-template-columns","fill","stroke"];
+
+function cloneWithStyles(src) {
+  const clone = src.cloneNode(false);
+  if (src.nodeType === 1) {
+    const cs = getComputedStyle(src);
+    let css = "";
+    for (const p of STYLE_PROPS) { const val = cs.getPropertyValue(p); if (val) css += p + ":" + val + ";"; }
+    clone.setAttribute("style", css);
+    clone.removeAttribute("class");
+  }
+  for (const child of src.childNodes) {
+    if (child.nodeType === 1 || (child.nodeType === 3 && child.textContent.trim() !== "")) {
+      clone.appendChild(cloneWithStyles(child));
+    }
+  }
+  return clone;
+}
+
+async function capturePNG(node) {
+  const rect = node.getBoundingClientRect();
+  const w = Math.max(1, Math.ceil(rect.width)), h = Math.max(1, Math.ceil(rect.height));
+  const clone = cloneWithStyles(node);
+  clone.setAttribute("style", (clone.getAttribute("style") || "") + ";margin:0;background:#fff;width:" + w + "px;");
+  const xml = new XMLSerializer().serializeToString(clone);
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+    '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+    '<div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff">' + xml + '</div>' +
+    '</foreignObject></svg>';
+  const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const img = new Image();
+  const png = await new Promise(res => {
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.drawImage(img, 0, 0);
+        res(c.toDataURL("image/png"));
+      } catch (e) { res(null); }
+    };
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+  return png || receiptPNG();
+}
+
+function receiptPNG() {
+  const name = document.getElementById('hackerName').value || "(none)";
+  const score = attempts.filter(a => sorted[a.id] === a.correct).length;
+  const lines = [
+    "Perimeter Watch — submission receipt",
+    "Assignment: " + CONFIG.assignmentId,
+    "Hacker: " + name,
+    "Score: " + score + " / " + attempts.length,
+    ""
+  ].concat(attempts.map(a => ((sorted[a.id] === a.correct) ? "[ok] " : "[--] ") + (a.src + " -> " + a.dst + ":" + a.port).slice(0, 46)));
+  const c = document.createElement("canvas"); c.width = 640; c.height = 44 + lines.length * 22 + 16;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "#26221A"; ctx.font = "14px monospace";
+  lines.forEach((l, i) => ctx.fillText(l, 16, 34 + i * 22));
+  return c.toDataURL("image/png");
+}
+
+/* =====================================================================
+   SUBMISSION — posts to the Apps Script web app configured above.
+   Requires a companion Code.gs deployed as a web app (see project notes).
+   ===================================================================== */
+function taskResults() {
+  return TASKS.map(t => ({ id: t.id, label: t.label, passed: !!t.pass() }));
+}
+function selectionResults() {
+  // Raw picks only — no correct/incorrect flag. The server holds the answer
+  // key and grades these; the client no longer gets to declare its own score.
+  return attempts.map(a => ({ id: a.id, selected: sorted[a.id] || null }));
+}
+function setSendStatus(msg, cls) {
+  const el = document.getElementById('sendStatus');
+  el.className = 'submit-status' + (cls ? ' ' + cls : '');
+  el.innerHTML = msg;
+}
+
+document.getElementById('sendBtn').addEventListener('click', async () => {
+  const nameField = document.getElementById('hackerName');
+  const hackerName = nameField.value.trim();
+  if (!hackerName) {
+    setSendStatus('Enter a hacker name before submitting.', 'bad');
+    nameField.focus();
+    return;
+  }
+  const undecided = attempts.filter(a => !sorted[a.id]).length;
+  if (undecided > 0) {
+    setSendStatus('You still have ' + undecided + ' connection attempt' + (undecided > 1 ? 's' : '') + ' with no decision. Decide every attempt, then submit.', 'bad');
+    return;
+  }
+  if (!CONFIG.SUBMIT_URL || CONFIG.SUBMIT_URL.startsWith('PASTE_')) {
+    setSendStatus('This lab isn’t wired to a submission endpoint yet. Ask your instructor to set SUBMIT_URL.', 'bad');
+    return;
+  }
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+  setSendStatus('Capturing your work and submitting…', 'work');
+
+  const tasks = taskResults();
+  const selections = selectionResults();
+
+  let screenshot;
+  try { screenshot = await capturePNG(document.querySelector('.workspace')); }
+  catch (e) { screenshot = receiptPNG(); }
+
+  const payload = {
+    assignmentId: CONFIG.assignmentId,
+    hackerName: hackerName.slice(0, 40),
+    clientTimestamp: new Date().toISOString(),
+    objectives: CONFIG.objectives,
+    tasks: tasks,
+    selections: selections,
+    screenshot: screenshot
+  };
+
+  try {
+    const res = await fetch(CONFIG.SUBMIT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const out = await res.json();
+    if (out && out.success) {
+      const link = out.docUrl ? ' <a href="' + out.docUrl + '" target="_blank" rel="noopener">View submission record ↗</a>' : '';
+      const scoreText = out.score ? (out.score.earned + ' / ' + out.score.total) : '(graded server-side)';
+      setSendStatus('Submitted — ' + scoreText + ' recorded for ' + hackerName + '.' + link, 'good');
+    } else {
+      setSendStatus('The server rejected the submission' + (out && out.error ? ': ' + out.error : '.') + ' Tell your instructor and try again.', 'bad');
+      sendBtn.disabled = false;
+    }
+  } catch (err) {
+    try {
+      await fetch(CONFIG.SUBMIT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+      setSendStatus('Submitted, but this browser blocked the confirmation reply. Confirm receipt with your instructor.', 'work');
+    } catch (err2) {
+      setSendStatus('Couldn’t reach the submission server. Check your connection and try again.', 'bad');
+      sendBtn.disabled = false;
+    }
+  }
+});
+</script>
+
+</body>
+</html>
