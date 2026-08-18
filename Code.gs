@@ -156,6 +156,21 @@ var ANSWER_KEYS = {
       q2: 'b',
       q3: 'c'
     }
+  },
+  'perimeter-watch-firewall-triage': {
+    // 10 connection attempts against an ordered ACL; student calls ALLOW/DENY.
+    questions: {
+      1: 'allow',
+      2: 'allow',
+      3: 'allow',
+      4: 'deny',
+      5: 'allow',
+      6: 'deny',
+      7: 'allow',
+      8: 'deny',
+      9: 'allow',
+      10: 'deny'
+    }
   }
 };
 
