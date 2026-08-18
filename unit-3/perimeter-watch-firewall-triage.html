@@ -27,6 +27,29 @@
     padding: 0 0.4rem;
   }
   .policy-note { margin: 0 0 0.9rem; font-size: 0.78rem; color: var(--ink-soft); font-family: var(--mono); }
+  .cidr-note {
+    background: var(--paper-bg);
+    border: 1px dashed var(--ink-faint);
+    padding: 0 1rem;
+    margin: 0 0 1.3rem;
+    font-size: 0.86rem;
+    color: var(--ink);
+  }
+  .cidr-note summary {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    padding: 0.65rem 0;
+    list-style: none;
+  }
+  .cidr-note summary::-webkit-details-marker { display: none; }
+  .cidr-note summary::before { content: "▸ "; color: var(--teal); }
+  .cidr-note[open] summary::before { content: "▾ "; }
+  .cidr-note p { margin: 0 0 0.9rem; line-height: 1.5; }
+  .cidr-note p:last-child { margin-bottom: 1rem; }
+  .cidr-note code { font-family: var(--mono); font-size: 0.82em; background: var(--paper-card); border: 1px solid var(--paper-dark); padding: 0.05rem 0.3rem; border-radius: 3px; }
   table.acl-table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.84rem; }
   table.acl-table th, table.acl-table td { padding: 0.5rem 0.7rem; text-align: left; border-bottom: 1px dashed var(--line); }
   table.acl-table th {
@@ -150,6 +173,26 @@
     server). Thornbury's ATM network partner connects from <b>198.51.100.0/24</b>; their
     backup-maintenance contractor connects only from the static address <b>203.0.113.50</b>.
   </div>
+
+  <details class="cidr-note">
+    <summary>New to CIDR notation? Click for a quick explainer on addresses like 10.20.20.0/24</summary>
+    <p>
+      An IP address is four numbers separated by dots, like <code>10.20.20.44</code>. The
+      <code>/24</code> you see after some addresses (like <code>10.20.20.0/24</code>) means
+      "the first three numbers are fixed — only the last one can vary." So
+      <code>10.20.20.0/24</code> covers every address from <code>10.20.20.1</code> through
+      <code>10.20.20.254</code> — the whole corporate LAN, not one specific machine.
+    </p>
+    <p>
+      An address with <b>no</b> <code>/24</code> after it (like <code>203.0.113.50</code>) means
+      exactly that one device — no range at all.
+    </p>
+    <p>
+      You don't need to do any subnet math for this lab — just check whether an address's first
+      three numbers match the zone named in the rule. <code>10.20.20.44</code> matches
+      <code>10.20.20.0/24</code>. <code>10.20.30.44</code> does not.
+    </p>
+  </details>
 
   <div class="policy-panel">
     <p class="policy-note">Rules are evaluated top to bottom. The first rule that matches a connection decides its fate — later rules are never checked once one matches.</p>
