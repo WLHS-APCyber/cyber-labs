@@ -192,6 +192,17 @@
       three numbers match the zone named in the rule. <code>10.20.20.44</code> matches
       <code>10.20.20.0/24</code>. <code>10.20.30.44</code> does not.
     </p>
+    <p>
+      You'll also see connections arriving from addresses like <code>192.0.2.15</code>,
+      <code>198.51.100.77</code>, and <code>203.0.113.201</code> — these stand in for real hosts out
+      on the internet. Don't mistake them for private addresses just because some start with
+      "192." — the <b>only</b> ranges that are actually private are <code>10.0.0.0/8</code>,
+      <code>172.16.0.0/12</code>, and <code>192.168.0.0/16</code>. Blocks like
+      <code>192.0.2.0/24</code>, <code>198.51.100.0/24</code>, and <code>203.0.113.0/24</code> are
+      reserved for documentation and training use, which is why this lab is safe to use them — but
+      to Thornbury's firewall, traffic from one of these is just another address out on the public
+      internet.
+    </p>
   </details>
 
   <div class="policy-panel">
