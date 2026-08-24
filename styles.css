@@ -224,6 +224,19 @@ h1.title {
 
 .unit-count { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); }
 
+summary.unit-head { cursor: pointer; list-style: none; }
+summary.unit-head::-webkit-details-marker { display: none; }
+summary.unit-head::marker { content: ""; }
+summary.unit-head:hover .unit-chevron { color: var(--ink-soft); }
+
+.unit-chevron {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  transition: transform 0.15s ease;
+}
+details.unit[open] > summary.unit-head .unit-chevron { transform: rotate(90deg); }
+
 .topic { padding: 0.95rem 1.4rem; border-bottom: 1px dashed var(--line); }
 .topic:last-child { border-bottom: none; }
 
